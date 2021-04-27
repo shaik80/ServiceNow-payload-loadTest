@@ -19,10 +19,6 @@ func main() {
 	handleRequest()
 }
 
-type Payload struct {
-	res []interface{}
-}
-
 func handleRequest() {
 
 	myRoute := mux.NewRouter().StrictSlash(true)
@@ -43,15 +39,19 @@ func homePage(w http.ResponseWriter, r *http.Request) {
 	file, _ := ioutil.ReadFile("payload.json")
 	stringJsonData := string(file)
 
-	var data []interface{}
-	res := &Payload{}
+	var res []interface{}
 
 	for i := 0; i < numberOfNodes; i++ {
-		_ = json.Unmarshal([]byte(ReplaceData(stringJsonData)), &data)
-		res.res = append(res.res, data)
+		var data interface{}
+		err := json.Unmarshal([]byte(ReplaceData(stringJsonData)), &data)
+		if err != nil {
+			log.Fatal("unexpected error")
+			break
+		}
+		res = append(res, data)
 	}
 
-	jsonResponse, jsonError := json.Marshal(res.res)
+	jsonResponse, jsonError := json.Marshal(res)
 	if jsonError != nil {
 		fmt.Println("Unable to encode JSON")
 	}
