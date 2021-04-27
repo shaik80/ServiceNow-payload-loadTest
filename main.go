@@ -1,13 +1,16 @@
 package main
 
 import (
+	"bytes"
+	"compress/gzip"
+	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"log"
 	"math/rand"
 	"net/http"
-	"strconv"
 	"strings"
 	"time"
 
@@ -24,7 +27,7 @@ func handleRequest() {
 	myRoute := mux.NewRouter().StrictSlash(true)
 	// Declaration of api route
 	// homePage is func homePage which is called in handle func
-	myRoute.HandleFunc("/{id}", homePage).Methods("GET")
+	myRoute.HandleFunc("/", homePage).Methods("POST")
 	// Declaration of server and port
 	log.Println("listening on", 8081)
 	err := http.ListenAndServe(":8081", myRoute)
@@ -46,7 +49,19 @@ func replaceAndAppend(res *[]interface{}, doneChannel chan bool, index int, stri
 }
 
 func homePage(w http.ResponseWriter, r *http.Request) {
-	numberOfNodes, _ := strconv.Atoi(mux.Vars(r)["id"])
+	decoder := json.NewDecoder(r.Body)
+	var t map[string]interface{}
+	err := decoder.Decode(&t)
+
+	if err != nil {
+		panic(err)
+	}
+
+	numberOfNodes := t["id"].(int)
+	url := t["url"]
+	username := t["username"]
+	password := t["password"]
+
 	file, _ := ioutil.ReadFile("payload.json")
 	stringJsonData := string(file)
 
@@ -65,7 +80,7 @@ func homePage(w http.ResponseWriter, r *http.Request) {
 	if jsonError != nil {
 		fmt.Println("Unable to encode JSON")
 	}
-
+	sendNotification(jsonResponse, url, username, password)
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	w.Write(jsonResponse)
@@ -99,6 +114,7 @@ func homePage(w http.ResponseWriter, r *http.Request) {
 // 	w.Write(jsonResponse)
 
 // }
+
 func randomNodeId() string {
 	NodeId := uuid.NewV4()
 	fmt.Println("Your UUIDv4 is: %s", NodeId)
@@ -123,4 +139,60 @@ func ReplaceData(data string) string {
 	ReplaceIpAddress := strings.ReplaceAll(ReplaceNodeId, "10.127.75.100", generateIpAddress())
 	ReplaceSerialNumber := strings.ReplaceAll(ReplaceIpAddress, "ec2f999c-e79a-0454-6a18-d9942ab11f77", randomserialNumber())
 	return ReplaceSerialNumber
+}
+
+func sendNotification(data []byte, url string, username string, password string) error {
+
+	var contentBuffer bytes.Buffer
+	zip := gzip.NewWriter(&contentBuffer)
+	_, err := zip.Write(data)
+	if err != nil {
+		return err
+	}
+	err = zip.Close()
+	if err != nil {
+		return err
+	}
+
+	request, err := http.NewRequest("POST", url, &contentBuffer)
+	if err != nil {
+		fmt.Println("Error creating request")
+		return err
+	}
+	request.Header.Add("Authorization", basicAuth(username, password))
+	request.Header.Add("Content-Type", "application/json")
+	request.Header.Add("Content-Encoding", "gzip")
+	request.Header.Add("Accept", "*/*")
+
+	var client http.Client
+	var acceptedStatusCodes = []int32{200, 201, 202, 203, 204}
+
+	response, err := client.Do(request)
+	if err != nil {
+		fmt.Println("Error sending message %v", err)
+		return err
+	} else {
+		fmt.Println("Asset data posted to %v, Status %v", url, response.Status)
+	}
+	if !IsAcceptedStatusCode(int32(response.StatusCode), acceptedStatusCodes) {
+		return errors.New(response.Status)
+	}
+	err = response.Body.Close()
+	if err != nil {
+		fmt.Println("Error closing response body %v", err)
+	}
+	return nil
+}
+func basicAuth(username string, password string) string {
+	auth := username + ":" + password
+	return "Basic " + base64.StdEncoding.EncodeToString([]byte(auth))
+}
+
+func IsAcceptedStatusCode(statusCode int32, acceptedCodes []int32) bool {
+	for _, code := range acceptedCodes {
+		if code == statusCode {
+			return true
+		}
+	}
+	return false
 }
