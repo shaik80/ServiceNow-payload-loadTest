@@ -6,47 +6,41 @@ import (
 	"io/ioutil"
 	"log"
 	"math/rand"
-	"net/http"
+	"os"
 	"strconv"
 	"strings"
 	"time"
 
-	"github.com/gorilla/mux"
 	uuid "github.com/satori/go.uuid"
 )
 
 func main() {
-	handleRequest()
-}
-
-func handleRequest() {
-
-	myRoute := mux.NewRouter().StrictSlash(true)
-	// Declaration of api route
-	// homePage is func homePage which is called in handle func
-	myRoute.HandleFunc("/{id}", homePage).Methods("GET")
-	// Declaration of server and port
-	log.Println("listening on", 8081)
-	err := http.ListenAndServe(":8081", myRoute)
-	if err != nil {
-		log.Fatal(err)
+	fmt.Println(len(os.Args), os.Args)
+	if len(os.Args) < 5 {
+		fmt.Println("Please pass all the arguments: numberOfNodes, url, username, password")
+		return
 	}
-
+	// handleRequest()
+	homePage(os.Args)
 }
 
-func replaceAndAppend(res *[]interface{}, doneChannel chan bool, index int, stringJsonData string) {
-	var data interface{}
-	err := json.Unmarshal([]byte(ReplaceData(stringJsonData)), &data)
-	if err != nil {
-		log.Fatal("unexpected error")
-	}
-	// res = append(res, data)
-	(*res)[index] = data
-	doneChannel <- true
-}
+// func handleRequest() {
 
-func homePage(w http.ResponseWriter, r *http.Request) {
-	numberOfNodes, _ := strconv.Atoi(mux.Vars(r)["id"])
+// 	myRoute := mux.NewRouter().StrictSlash(true)
+// 	// Declaration of api route
+// 	// homePage is func homePage which is called in handle func
+// 	myRoute.HandleFunc("/{id}", homePage).Methods("GET")
+// 	// Declaration of server and port
+// 	log.Println("listening on", 8081)
+// 	err := http.ListenAndServe(":8081", myRoute)
+// 	if err != nil {
+// 		log.Fatal(err)
+// 	}
+
+// }
+
+func homePage(args []string) {
+	numberOfNodes, _ := strconv.Atoi(args[1])
 	file, _ := ioutil.ReadFile("payload.json")
 	stringJsonData := string(file)
 
@@ -66,11 +60,47 @@ func homePage(w http.ResponseWriter, r *http.Request) {
 		fmt.Println("Unable to encode JSON")
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	w.Write(jsonResponse)
+	fmt.Println(string(jsonResponse))
 
 }
+
+func replaceAndAppend(res *[]interface{}, doneChannel chan bool, index int, stringJsonData string) {
+	var data interface{}
+	err := json.Unmarshal([]byte(ReplaceData(stringJsonData)), &data)
+	if err != nil {
+		log.Fatal("unexpected error")
+	}
+	// res = append(res, data)
+	(*res)[index] = data
+	doneChannel <- true
+}
+
+// func homePage(w http.ResponseWriter, r *http.Request) {
+// 	numberOfNodes, _ := strconv.Atoi(mux.Vars(r)["id"])
+// 	file, _ := ioutil.ReadFile("payload.json")
+// 	stringJsonData := string(file)
+
+// 	// var res []interface{}
+
+// 	doneChannel := make(chan bool)
+// 	resultSlice := make([]interface{}, numberOfNodes)
+// 	for i := 0; i < numberOfNodes; i++ {
+// 		go replaceAndAppend(&resultSlice, doneChannel, i, stringJsonData)
+// 	}
+
+// 	for i := 0; i < numberOfNodes; i++ {
+// 		<-doneChannel
+// 	}
+// 	jsonResponse, jsonError := json.Marshal(resultSlice)
+// 	if jsonError != nil {
+// 		fmt.Println("Unable to encode JSON")
+// 	}
+
+// 	w.Header().Set("Content-Type", "application/json")
+// 	w.WriteHeader(http.StatusOK)
+// 	w.Write(jsonResponse)
+
+// }
 
 // func homePage(w http.ResponseWriter, r *http.Request) {
 // 	numberOfNodes, _ := strconv.Atoi(mux.Vars(r)["id"])
