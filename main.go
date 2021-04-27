@@ -39,15 +39,14 @@ func handleRequest() {
 
 }
 func homePage(w http.ResponseWriter, r *http.Request) {
-	numberOfNudes, _ := strconv.Atoi(mux.Vars(r)["id"])
-	fmt.Println(numberOfNudes)
+	numberOfNodes, _ := strconv.Atoi(mux.Vars(r)["id"])
 	file, _ := ioutil.ReadFile("payload.json")
 	stringJsonData := string(file)
 
 	var data []interface{}
 	res := &Payload{}
 
-	for i := 0; i < numberOfNudes; i++ {
+	for i := 0; i < numberOfNodes; i++ {
 		_ = json.Unmarshal([]byte(ReplaceData(stringJsonData)), &data)
 		res.res = append(res.res, data)
 	}
