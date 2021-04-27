@@ -6,6 +6,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"errors"
+	"flag"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -14,59 +15,43 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gorilla/mux"
 	uuid "github.com/satori/go.uuid"
 )
 
 func main() {
-	handleRequest()
-}
-
-func handleRequest() {
-
-	myRoute := mux.NewRouter().StrictSlash(true)
-	// Declaration of api route
-	// homePage is func homePage which is called in handle func
-	myRoute.HandleFunc("/", homePage).Methods("POST")
-	// Declaration of server and port
-	log.Println("listening on", 8081)
-	err := http.ListenAndServe(":8081", myRoute)
-	if err != nil {
-		log.Fatal(err)
+	numberOfNodes := flag.Int("numberOfNodes", 0, "number of nodes")
+	url := flag.String("url", "", "serviceNow url")
+	username := flag.String("username", "", "serviceNow username")
+	password := flag.String("password", "", "serviceNow password")
+	flag.Parse()
+	fmt.Println(*numberOfNodes, *url, *username, *password)
+	if *numberOfNodes >= 0 {
+		fmt.Println("Please enter valid number")
+	} else if *url == "" {
+		fmt.Println("url should not be empty")
+	}else if *username == "" {
+		fmt.Println("username should not be empty")
+	}else if *password == "" {
+		fmt.Println("password should not be empty")
 	}
-
+	homePage(*numberOfNodes, *url, *username, *password)
 }
-
 func replaceAndAppend(res *[]interface{}, doneChannel chan bool, index int, stringJsonData string) {
 	var data interface{}
 	err := json.Unmarshal([]byte(ReplaceData(stringJsonData)), &data)
 	if err != nil {
 		log.Fatal("unexpected error")
 	}
-	// res = append(res, data)
 	(*res)[index] = data
 	doneChannel <- true
 }
 
-func homePage(w http.ResponseWriter, r *http.Request) {
-	decoder := json.NewDecoder(r.Body)
-	var t map[string]interface{}
-	err := decoder.Decode(&t)
-
-	if err != nil {
-		panic(err)
-	}
-
-	numberOfNodes := t["id"].(int)
-	url := t["url"]
-	username := t["username"]
-	password := t["password"]
+func homePage(numberOfNodes int, url string, username string, password string) {
 
 	file, _ := ioutil.ReadFile("payload.json")
 	stringJsonData := string(file)
 
-	// var res []interface{}
-
+	fmt.Println("numberOfNodes", numberOfNodes)
 	doneChannel := make(chan bool)
 	resultSlice := make([]interface{}, numberOfNodes)
 	for i := 0; i < numberOfNodes; i++ {
@@ -81,55 +66,23 @@ func homePage(w http.ResponseWriter, r *http.Request) {
 		fmt.Println("Unable to encode JSON")
 	}
 	sendNotification(jsonResponse, url, username, password)
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	w.Write(jsonResponse)
 
 }
-
-// func homePage(w http.ResponseWriter, r *http.Request) {
-// 	numberOfNodes, _ := strconv.Atoi(mux.Vars(r)["id"])
-// 	file, _ := ioutil.ReadFile("payload.json")
-// 	stringJsonData := string(file)
-
-// 	var res []interface{}
-
-// 	for i := 0; i < numberOfNodes; i++ {
-// 		var data interface{}
-// 		err := json.Unmarshal([]byte(ReplaceData(stringJsonData)), &data)
-// 		if err != nil {
-// 			log.Fatal("unexpected error")
-// 			break
-// 		}
-// 		res = append(res, data)
-// 	}
-
-// 	jsonResponse, jsonError := json.Marshal(res)
-// 	if jsonError != nil {
-// 		fmt.Println("Unable to encode JSON")
-// 	}
-
-// 	w.Header().Set("Content-Type", "application/json")
-// 	w.WriteHeader(http.StatusOK)
-// 	w.Write(jsonResponse)
-
-// }
-
 func randomNodeId() string {
 	NodeId := uuid.NewV4()
-	fmt.Println("Your UUIDv4 is: %s", NodeId)
+	fmt.Println("Your NodeId is: ", NodeId)
 	return fmt.Sprintf("%s", NodeId)
 }
 func randomserialNumber() string {
 	serialNumber := uuid.NewV5(uuid.UUID{}, "vm")
-	fmt.Println("Your UUIDv4 is: %s", serialNumber)
+	fmt.Println("Your serialNumbe is: ", serialNumber)
 	return fmt.Sprintf("%s", serialNumber)
 }
 
 func generateIpAddress() string {
 	r := rand.New(rand.NewSource(time.Now().UnixNano()))
 	data := fmt.Sprintf("%d.%d.%d.%d", r.Intn(255), r.Intn(255), r.Intn(255), r.Intn(255))
-	fmt.Println("your Ipaddress %s", data)
+	fmt.Println("your Ipaddress ", data)
 	return data
 }
 
@@ -169,17 +122,17 @@ func sendNotification(data []byte, url string, username string, password string)
 
 	response, err := client.Do(request)
 	if err != nil {
-		fmt.Println("Error sending message %v", err)
+		fmt.Println("Error sending message ", err)
 		return err
 	} else {
-		fmt.Println("Asset data posted to %v, Status %v", url, response.Status)
+		fmt.Println("Asset data posted to ", url , "Status ", response.Status)
 	}
 	if !IsAcceptedStatusCode(int32(response.StatusCode), acceptedStatusCodes) {
 		return errors.New(response.Status)
 	}
 	err = response.Body.Close()
 	if err != nil {
-		fmt.Println("Error closing response body %v", err)
+		fmt.Println("Error closing response body", err)
 	}
 	return nil
 }
