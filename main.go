@@ -30,7 +30,7 @@ func handleRequest() {
 	if err != nil {
 		log.Fatal(err)
 	} else {
-		log.Fatal("Server starting on port 8081......")
+		fmt.Println("Server starting on port 8081......")
 	}
 
 }
