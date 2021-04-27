@@ -16,9 +16,7 @@ import (
 )
 
 func main() {
-	fmt.Println("HELLO !")
 	handleRequest()
-	// DataAcess()
 }
 
 type Payload struct {
@@ -32,7 +30,13 @@ func handleRequest() {
 	// homePage is func homePage which is called in handle func
 	myRoute.HandleFunc("/{id}", homePage).Methods("GET")
 	// Declaration of server and port
-	log.Fatal(http.ListenAndServe(":8081", myRoute))
+	err := http.ListenAndServe(":8081", myRoute)
+	if err != nil {
+		log.Fatal(err)
+	} else {
+		log.Fatal("Server starting on port 8081......")
+	}
+
 }
 func homePage(w http.ResponseWriter, r *http.Request) {
 	numberOfNudes, _ := strconv.Atoi(mux.Vars(r)["id"])
