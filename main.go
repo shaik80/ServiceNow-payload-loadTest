@@ -20,27 +20,36 @@ import (
 )
 
 func main() {
-	channelSingleRequest := make(chan bool)
+	err := false
 	numberOfNodes := flag.Int("numberOfNodes", 0, "number of nodes")
 	url := flag.String("url", "", "serviceNow url")
 	username := flag.String("username", "", "serviceNow username")
 	password := flag.String("password", "", "serviceNow password")
-	batchSize := flag.Int("batchSize", 0, "Batch size to send number of nodes")
+	batchSize := flag.Int("batchSize", 1, "Batch size to send number of nodes")
 	flag.Parse()
 	if *numberOfNodes <= 0 {
+		err = true
 		fmt.Println("Please enter valid number")
-	} else if *url == "" {
+	}
+	if *url == "" {
+		err = true
 		fmt.Println("url should not be empty")
-	} else if *username == "" {
+	}
+	if *username == "" {
+		err = true
 		fmt.Println("username should not be empty")
-	} else if *password == "" {
+	}
+	if *password == "" {
+		err = true
 		fmt.Println("password should not be empty")
-	} else {
-		if *batchSize != 0 {
-			batchSizeRequest(*numberOfNodes, *url, *username, *password, *batchSize)
-		} else {
-			homePage(*numberOfNodes, *url, *username, *password, channelSingleRequest)
-		}
+	}
+	if *batchSize <= 0 {
+		err = true
+		fmt.Println("Please enter valid number")
+	}
+	
+	if !err {
+		batchSizeRequest(*numberOfNodes, *url, *username, *password, *batchSize)
 	}
 }
 func replaceAndAppend(res *[]interface{}, doneChannel chan bool, index int, stringJsonData string) {
@@ -78,14 +87,18 @@ func homePage(numberOfNodes int, url string, username string, password string, d
 
 func batchSizeRequest(numberOfNodes int, url string, username string, password string, batchSize int) {
 	doneChannelBatchSize := make(chan bool)
+
 	numberOfBatchRequest := math.Trunc(float64(numberOfNodes / batchSize))
+
 	singleRequest := numberOfNodes % batchSize
+
 	if singleRequest != 0 {
 		go homePage(singleRequest, url, username, password, doneChannelBatchSize)
 	}
 	if singleRequest != 0 {
 		<-doneChannelBatchSize
 	}
+
 	for i := 0; i < int(numberOfBatchRequest); i++ {
 		go homePage(batchSize, url, username, password, doneChannelBatchSize)
 	}
