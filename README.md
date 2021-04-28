@@ -18,5 +18,3 @@ There are 2 ways:
     * run `./main -h`, It shows the parameter to pass in command
     * To send data to serviceNow run `./main -numberOfNodes=1 -url=https://86e66aab97d5.ngrok.io/request -username=admin -password=password`
 
-### What it does
-It replace NodeId,IpAddress and SerialNumber
