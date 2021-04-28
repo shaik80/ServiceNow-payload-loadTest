@@ -8,7 +8,7 @@
 
 ### How to run
 
-There 2 ways:
+There are 2 ways:
 
 1. Directly using by main.go (for development)
     *  Run `go run main.go -h`, It shows the parameter to pass in command
