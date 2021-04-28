@@ -25,16 +25,17 @@ func main() {
 	password := flag.String("password", "", "serviceNow password")
 	flag.Parse()
 	fmt.Println(*numberOfNodes, *url, *username, *password)
-	if *numberOfNodes >= 0 {
+	if *numberOfNodes <= 0 {
 		fmt.Println("Please enter valid number")
 	} else if *url == "" {
 		fmt.Println("url should not be empty")
-	}else if *username == "" {
+	} else if *username == "" {
 		fmt.Println("username should not be empty")
-	}else if *password == "" {
+	} else if *password == "" {
 		fmt.Println("password should not be empty")
+	} else {
+		homePage(*numberOfNodes, *url, *username, *password)
 	}
-	homePage(*numberOfNodes, *url, *username, *password)
 }
 func replaceAndAppend(res *[]interface{}, doneChannel chan bool, index int, stringJsonData string) {
 	var data interface{}
@@ -70,19 +71,17 @@ func homePage(numberOfNodes int, url string, username string, password string) {
 }
 func randomNodeId() string {
 	NodeId := uuid.NewV4()
-	fmt.Println("Your NodeId is: ", NodeId)
 	return fmt.Sprintf("%s", NodeId)
 }
 func randomserialNumber() string {
 	serialNumber := uuid.NewV5(uuid.UUID{}, "vm")
-	fmt.Println("Your serialNumbe is: ", serialNumber)
 	return fmt.Sprintf("%s", serialNumber)
 }
 
 func generateIpAddress() string {
 	r := rand.New(rand.NewSource(time.Now().UnixNano()))
 	data := fmt.Sprintf("%d.%d.%d.%d", r.Intn(255), r.Intn(255), r.Intn(255), r.Intn(255))
-	fmt.Println("your Ipaddress ", data)
+
 	return data
 }
 
@@ -125,7 +124,7 @@ func sendNotification(data []byte, url string, username string, password string)
 		fmt.Println("Error sending message ", err)
 		return err
 	} else {
-		fmt.Println("Asset data posted to ", url , "Status ", response.Status)
+		fmt.Println("Asset data posted to ", url, "Status ", response.Status)
 	}
 	if !IsAcceptedStatusCode(int32(response.StatusCode), acceptedStatusCodes) {
 		return errors.New(response.Status)
