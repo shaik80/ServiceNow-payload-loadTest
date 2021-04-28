@@ -92,17 +92,16 @@ func batchSizeRequest(numberOfNodes int, url string, username string, password s
 
 	singleRequest := numberOfNodes % batchSize
 
-	if singleRequest != 0 {
-		go homePage(singleRequest, url, username, password, doneChannelBatchSize)
-	}
-	if singleRequest != 0 {
-		<-doneChannelBatchSize
-	}
-
 	for i := 0; i < int(numberOfBatchRequest); i++ {
 		go homePage(batchSize, url, username, password, doneChannelBatchSize)
 	}
 	for i := 0; i < int(numberOfBatchRequest); i++ {
+		<-doneChannelBatchSize
+	}
+	if singleRequest != 0 {
+		go homePage(singleRequest, url, username, password, doneChannelBatchSize)
+	}
+	if singleRequest != 0 {
 		<-doneChannelBatchSize
 	}
 }
