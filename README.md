@@ -15,7 +15,7 @@ There are 2 ways:
     * To send data to serviceNow run `go run main.go -numberOfNodes=1 -url=https://86e66aab97d5.ngrok.io/request -username=admin -password=password`
 2. By using build file (for testing)
     * [click here](https://github.com/shaik80/ServiceNow-payload-loadTest/raw/main/ServiceNowLoadTest "ServiceNow load test build file") to download build file
-    * run `./main -h`, It shows the parameter to pass in command
+    * run `./ServiceNowLoadTest -h`, It shows the parameter to pass in command
         ```
         -numberOfNodes int
             number of nodes
@@ -26,4 +26,6 @@ There are 2 ways:
         -username string
             serviceNow username
         ```
-    * To send data to serviceNow run `./main -numberOfNodes=1 -url=https://86e66aab97d5.ngrok.io/request -username=admin -password=password`
+    * To send data to serviceNow run `./ServiceNowLoadTest -numberOfNodes=1 -url=https://86e66aab97d5.ngrok.io/request -username=admin -password=password`
+
+**Note :** if you have multiple files downloaded then replace file name with `ServiceNowLoadTest` then u can follow secound point
