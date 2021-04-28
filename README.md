@@ -18,15 +18,18 @@ There are 2 ways:
     * Open terminal and goto the path where you have downloaded file
     * run `./ServiceNowLoadTest -h`, It shows the parameter to pass in command
         ```
-        -numberOfNodes int
-            number of nodes
-        -password string
-            serviceNow password
-        -url string
-            serviceNow url
-        -username string
-            serviceNow username
+          -batchSize int
+                Batch size to send number of nodes
+          -numberOfNodes int
+                number of nodes
+          -password string
+                serviceNow password
+          -url string
+                serviceNow url
+          -username string
+                serviceNow username
         ```
-    * To send data to serviceNow run `./ServiceNowLoadTest -numberOfNodes=1 -url=https://dev66754.service-now.com/api/x_chef_automate/asset -username=admin -password=password`
+    * If u want to send Data to serviceNow without batch size run `./ServiceNowLoadTest -numberOfNodes=1 -url=https://dev66754.service-now.com/api/x_chef_automate/asset -username=admin -password=password`,
+    * If u want to send Data to serviceNow with batch size run `./ServiceNowLoadTest -numberOfNodes=10 -batchSize=3 -url=https://dev66754.service-now.com/api/x_chef_automate/asset -username=admin -password=password`,
 
 **Note :** if you have multiple files downloaded then replace file name with `ServiceNowLoadTest` then u can follow secound point
