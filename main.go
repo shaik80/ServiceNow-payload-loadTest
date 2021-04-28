@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
+	"math"
 	"math/rand"
 	"net/http"
 	"strings"
@@ -19,12 +20,13 @@ import (
 )
 
 func main() {
+	channelSingleRequest := make(chan bool)
 	numberOfNodes := flag.Int("numberOfNodes", 0, "number of nodes")
 	url := flag.String("url", "", "serviceNow url")
 	username := flag.String("username", "", "serviceNow username")
 	password := flag.String("password", "", "serviceNow password")
+	batchSize := flag.Int("batchSize", 0, "Batch size to send number of nodes")
 	flag.Parse()
-	fmt.Println(*numberOfNodes, *url, *username, *password)
 	if *numberOfNodes <= 0 {
 		fmt.Println("Please enter valid number")
 	} else if *url == "" {
@@ -34,7 +36,11 @@ func main() {
 	} else if *password == "" {
 		fmt.Println("password should not be empty")
 	} else {
-		homePage(*numberOfNodes, *url, *username, *password)
+		if *batchSize != 0 {
+			batchSizeRequest(*numberOfNodes, *url, *username, *password, *batchSize)
+		} else {
+			homePage(*numberOfNodes, *url, *username, *password, channelSingleRequest)
+		}
 	}
 }
 func replaceAndAppend(res *[]interface{}, doneChannel chan bool, index int, stringJsonData string) {
@@ -47,28 +53,47 @@ func replaceAndAppend(res *[]interface{}, doneChannel chan bool, index int, stri
 	doneChannel <- true
 }
 
-func homePage(numberOfNodes int, url string, username string, password string) {
+func homePage(numberOfNodes int, url string, username string, password string, doneChannel chan bool) {
 
 	file, _ := ioutil.ReadFile("payload.json")
 	stringJsonData := string(file)
 
-	fmt.Println("numberOfNodes", numberOfNodes)
-	doneChannel := make(chan bool)
+	doneChannelReplaceAppend := make(chan bool)
 	resultSlice := make([]interface{}, numberOfNodes)
 	for i := 0; i < numberOfNodes; i++ {
-		go replaceAndAppend(&resultSlice, doneChannel, i, stringJsonData)
+		go replaceAndAppend(&resultSlice, doneChannelReplaceAppend, i, stringJsonData)
 	}
 
 	for i := 0; i < numberOfNodes; i++ {
-		<-doneChannel
+		<-doneChannelReplaceAppend
 	}
 	jsonResponse, jsonError := json.Marshal(resultSlice)
 	if jsonError != nil {
 		fmt.Println("Unable to encode JSON")
 	}
+	fmt.Println(":::::: Node size per request :::::: ", numberOfNodes)
 	sendNotification(jsonResponse, url, username, password)
-
+	doneChannel <- true
 }
+
+func batchSizeRequest(numberOfNodes int, url string, username string, password string, batchSize int) {
+	doneChannelBatchSize := make(chan bool)
+	numberOfBatchRequest := math.Trunc(float64(numberOfNodes / batchSize))
+	singleRequest := numberOfNodes % batchSize
+	if singleRequest != 0 {
+		go homePage(singleRequest, url, username, password, doneChannelBatchSize)
+	}
+	if singleRequest != 0 {
+		<-doneChannelBatchSize
+	}
+	for i := 0; i < int(numberOfBatchRequest); i++ {
+		go homePage(batchSize, url, username, password, doneChannelBatchSize)
+	}
+	for i := 0; i < int(numberOfBatchRequest); i++ {
+		<-doneChannelBatchSize
+	}
+}
+
 func randomNodeId() string {
 	NodeId := uuid.NewV4()
 	return fmt.Sprintf("%s", NodeId)
