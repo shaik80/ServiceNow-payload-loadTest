@@ -1,4 +1,4 @@
-module main
+module github.com/smudassi/ServiceNowLoadTest
 
 go 1.16
 
