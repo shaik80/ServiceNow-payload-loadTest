@@ -5,7 +5,6 @@
 ### How to use this repo
 1. Clone Repo by entering this command `git clone https://github.com/shaik80/ServiceNow-payload-loadTest.git`
 2. Then go inside the repository and run `go run main.go`
-repository
 
 ### How to run
 
