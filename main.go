@@ -111,7 +111,7 @@ func randomNodeId() string {
 	return fmt.Sprintf("%s", NodeId)
 }
 func randomserialNumber() string {
-	serialNumber := uuid.NewV5(uuid.UUID{}, "vm")
+	serialNumber := uuid.NewV4()
 	return fmt.Sprintf("%s", serialNumber)
 }
 
