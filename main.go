@@ -47,13 +47,13 @@ func main() {
 		err = true
 		fmt.Println("Please enter valid number")
 	}
-	
+
 	if !err {
 		batchSizeRequest(*numberOfNodes, *url, *username, *password, *batchSize)
 	}
 }
-func replaceAndAppend(res *[]interface{}, doneChannel chan bool, index int, stringJsonData string) {
-	var data interface{}
+func replaceAndAppend(res *[]map[string]interface{}, doneChannel chan bool, index int, stringJsonData string) {
+	var data map[string]interface{}
 	err := json.Unmarshal([]byte(ReplaceData(stringJsonData)), &data)
 	if err != nil {
 		log.Fatal("unexpected error")
@@ -62,13 +62,13 @@ func replaceAndAppend(res *[]interface{}, doneChannel chan bool, index int, stri
 	doneChannel <- true
 }
 
-func homePage(numberOfNodes int, url string, username string, password string, doneChannel chan bool) {
+func homePage(numberOfNodes int, url string, username string, password string) {
 
 	file, _ := ioutil.ReadFile("payload.json")
 	stringJsonData := string(file)
 
 	doneChannelReplaceAppend := make(chan bool)
-	resultSlice := make([]interface{}, numberOfNodes)
+	resultSlice := make([]map[string]interface{}, numberOfNodes)
 	for i := 0; i < numberOfNodes; i++ {
 		go replaceAndAppend(&resultSlice, doneChannelReplaceAppend, i, stringJsonData)
 	}
@@ -76,34 +76,34 @@ func homePage(numberOfNodes int, url string, username string, password string, d
 	for i := 0; i < numberOfNodes; i++ {
 		<-doneChannelReplaceAppend
 	}
-	jsonResponse, jsonError := json.Marshal(resultSlice)
-	if jsonError != nil {
-		fmt.Println("Unable to encode JSON")
-	}
+	// jsonResponse, jsonError := json.Marshal(resultSlice)
+	// if jsonError != nil {
+	// 	fmt.Println("Unable to encode JSON")
+	// }
 	fmt.Println(":::::: Node size per request :::::: ", numberOfNodes)
-	sendNotification(jsonResponse, url, username, password)
-	doneChannel <- true
+	sendNotification(resultSlice, url, username, password)
+	// doneChannel <- true
 }
 
 func batchSizeRequest(numberOfNodes int, url string, username string, password string, batchSize int) {
-	doneChannelBatchSize := make(chan bool)
+	// doneChannelBatchSize := make(chan bool)
 
 	numberOfBatchRequest := math.Trunc(float64(numberOfNodes / batchSize))
 
 	singleRequest := numberOfNodes % batchSize
 
 	for i := 0; i < int(numberOfBatchRequest); i++ {
-		go homePage(batchSize, url, username, password, doneChannelBatchSize)
+		homePage(batchSize, url, username, password)
 	}
-	for i := 0; i < int(numberOfBatchRequest); i++ {
-		<-doneChannelBatchSize
-	}
+	// for i := 0; i < int(numberOfBatchRequest); i++ {
+	// 	<-doneChannelBatchSize
+	// }
 	if singleRequest != 0 {
-		go homePage(singleRequest, url, username, password, doneChannelBatchSize)
+		homePage(singleRequest, url, username, password)
 	}
-	if singleRequest != 0 {
-		<-doneChannelBatchSize
-	}
+	// if singleRequest != 0 {
+	// 	<-doneChannelBatchSize
+	// }
 }
 
 func randomNodeId() string {
@@ -130,11 +130,19 @@ func ReplaceData(data string) string {
 	return ReplaceSerialNumber
 }
 
-func sendNotification(data []byte, url string, username string, password string) error {
+func sendNotification(data []map[string]interface{}, url string, username string, password string) error {
+
+	var buffer bytes.Buffer
+	for _, message := range data {
+		data1, _ := json.Marshal(message)
+		data1 = bytes.ReplaceAll(data1, []byte("\n"), []byte("\f"))
+		buffer.Write(data1)
+		buffer.WriteString("\n")
+	}
 
 	var contentBuffer bytes.Buffer
 	zip := gzip.NewWriter(&contentBuffer)
-	_, err := zip.Write(data)
+	_, err := zip.Write(buffer.Bytes())
 	if err != nil {
 		return err
 	}
