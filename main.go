@@ -132,6 +132,7 @@ func ReplaceData(data string) string {
 
 func sendNotification(data []map[string]interface{}, url string, username string, password string) error {
 
+	startTime := time.Now().UnixNano() / 1000000
 	var buffer bytes.Buffer
 	for _, message := range data {
 		data1, _ := json.Marshal(message)
@@ -169,7 +170,10 @@ func sendNotification(data []map[string]interface{}, url string, username string
 		fmt.Println("Error sending message ", err)
 		return err
 	} else {
+		endTime := time.Now().UnixNano() / 1000000
 		fmt.Println("Asset data posted to ", url, "Status ", response.Status)
+		fmt.Println("Time taken to send data to serviceNow is ", endTime-startTime, "Millisecond")
+
 	}
 	if !IsAcceptedStatusCode(int32(response.StatusCode), acceptedStatusCodes) {
 		return errors.New(response.Status)
