@@ -118,7 +118,6 @@ func randomserialNumber() string {
 func generateIpAddress() string {
 	r := rand.New(rand.NewSource(time.Now().UnixNano()))
 	data := fmt.Sprintf("%d.%d.%d.%d", r.Intn(255), r.Intn(255), r.Intn(255), r.Intn(255))
-
 	return data
 }
 
@@ -127,7 +126,8 @@ func ReplaceData(data string) string {
 	ReplaceNodeId := strings.ReplaceAll(data, "1304ecea-95bd-4830-b8c9-2cbb33555695", randomNodeId())
 	ReplaceIpAddress := strings.ReplaceAll(ReplaceNodeId, "10.127.75.100", generateIpAddress())
 	ReplaceSerialNumber := strings.ReplaceAll(ReplaceIpAddress, "ec2f999c-e79a-0454-6a18-d9942ab11f77", randomserialNumber())
-	return ReplaceSerialNumber
+	ReplaceHostName := strings.ReplaceAll(ReplaceSerialNumber, "VA1IHGDLOY08", String(12))
+	return ReplaceHostName
 }
 
 func sendNotification(data []map[string]interface{}, url string, username string, password string) error {
@@ -196,4 +196,21 @@ func IsAcceptedStatusCode(statusCode int32, acceptedCodes []int32) bool {
 		}
 	}
 	return false
+}
+
+const charset = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+
+var seededRand *rand.Rand = rand.New(
+	rand.NewSource(time.Now().UnixNano()))
+
+func StringWithCharset(length int, charset string) string {
+	b := make([]byte, length)
+	for i := range b {
+		b[i] = charset[seededRand.Intn(len(charset))]
+	}
+	return string(b)
+}
+
+func String(length int) string {
+	return StringWithCharset(length, charset)
 }
