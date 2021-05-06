@@ -19,6 +19,14 @@ import (
 	uuid "github.com/satori/go.uuid"
 )
 
+const (
+	COMPLIANCE = "compliance"
+	ATTRIBUTES = "attributes"
+	CLIENT_RUN = "client_run"
+	NODE       = "node"
+	REPORT     = "report"
+)
+
 func main() {
 	err := false
 	numberOfNodes := flag.Int("numberOfNodes", 0, "number of nodes")
@@ -26,6 +34,7 @@ func main() {
 	username := flag.String("username", "", "serviceNow username")
 	password := flag.String("password", "", "serviceNow password")
 	batchSize := flag.Int("batchSize", 1, "Batch size to send number of nodes")
+	dataType := flag.String("data", "all", "type of data to send: node or compliance or all")
 	flag.Parse()
 	if *numberOfNodes <= 0 {
 		err = true
@@ -47,22 +56,35 @@ func main() {
 		err = true
 		fmt.Println("Please enter valid number")
 	}
+	if *dataType != "all" && *dataType != "node" && *dataType != "compliance" {
+		err = true
+		fmt.Println("data should be either node or compliance or all")
+	}
 
 	if !err {
-		batchSizeRequest(*numberOfNodes, *url, *username, *password, *batchSize)
+		batchSizeRequest(*numberOfNodes, *url, *username, *password, *batchSize, *dataType)
 	}
 }
-func replaceAndAppend(res *[]map[string]interface{}, doneChannel chan bool, index int, stringJsonData string) {
+func replaceAndAppend(res *[]map[string]interface{}, doneChannel chan bool, index int, stringJsonData string, datatype string) {
 	var data map[string]interface{}
 	err := json.Unmarshal([]byte(ReplaceData(stringJsonData)), &data)
 	if err != nil {
 		log.Fatal("unexpected error")
 	}
-	(*res)[index] = data
+	(*res)[index] = map[string]interface{}{}
+	if datatype == COMPLIANCE {
+		(*res)[index][REPORT] = data[REPORT]
+	} else if datatype == NODE {
+		(*res)[index][ATTRIBUTES] = data[ATTRIBUTES]
+		(*res)[index][CLIENT_RUN] = data[CLIENT_RUN]
+		(*res)[index][NODE] = data[NODE]
+	} else {
+		(*res)[index] = data
+	}
 	doneChannel <- true
 }
 
-func homePage(numberOfNodes int, url string, username string, password string) {
+func homePage(numberOfNodes int, url string, username string, password string, datatype string) {
 
 	file, _ := ioutil.ReadFile("payload.json")
 	stringJsonData := string(file)
@@ -70,7 +92,7 @@ func homePage(numberOfNodes int, url string, username string, password string) {
 	doneChannelReplaceAppend := make(chan bool)
 	resultSlice := make([]map[string]interface{}, numberOfNodes)
 	for i := 0; i < numberOfNodes; i++ {
-		go replaceAndAppend(&resultSlice, doneChannelReplaceAppend, i, stringJsonData)
+		go replaceAndAppend(&resultSlice, doneChannelReplaceAppend, i, stringJsonData, datatype)
 	}
 
 	for i := 0; i < numberOfNodes; i++ {
@@ -80,12 +102,12 @@ func homePage(numberOfNodes int, url string, username string, password string) {
 	// if jsonError != nil {
 	// 	fmt.Println("Unable to encode JSON")
 	// }
-	fmt.Println(":::::: Node size per request :::::: ", numberOfNodes)
+	fmt.Println("Node size per request :::::: ", numberOfNodes)
 	sendNotification(resultSlice, url, username, password)
 	// doneChannel <- true
 }
 
-func batchSizeRequest(numberOfNodes int, url string, username string, password string, batchSize int) {
+func batchSizeRequest(numberOfNodes int, url string, username string, password string, batchSize int, datatype string) {
 	// doneChannelBatchSize := make(chan bool)
 
 	numberOfBatchRequest := math.Trunc(float64(numberOfNodes / batchSize))
@@ -93,13 +115,13 @@ func batchSizeRequest(numberOfNodes int, url string, username string, password s
 	singleRequest := numberOfNodes % batchSize
 
 	for i := 0; i < int(numberOfBatchRequest); i++ {
-		homePage(batchSize, url, username, password)
+		homePage(batchSize, url, username, password, datatype)
 	}
 	// for i := 0; i < int(numberOfBatchRequest); i++ {
 	// 	<-doneChannelBatchSize
 	// }
 	if singleRequest != 0 {
-		homePage(singleRequest, url, username, password)
+		homePage(singleRequest, url, username, password, datatype)
 	}
 	// if singleRequest != 0 {
 	// 	<-doneChannelBatchSize

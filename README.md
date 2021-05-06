@@ -20,6 +20,8 @@ There are 2 ways:
         ```
           -batchSize int
                 Batch size to send number of nodes
+          -data string
+                type of data to send: node or compliance or all (default "all")
           -numberOfNodes int
                 number of nodes
           -password string
