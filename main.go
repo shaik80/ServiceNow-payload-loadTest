@@ -25,6 +25,7 @@ const (
 	CLIENT_RUN = "client_run"
 	NODE       = "node"
 	REPORT     = "report"
+	charset    = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 )
 
 func main() {
@@ -229,8 +230,6 @@ func IsAcceptedStatusCode(statusCode int32, acceptedCodes []int32) bool {
 	}
 	return false
 }
-
-const charset = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 
 var seededRand *rand.Rand = rand.New(
 	rand.NewSource(time.Now().UnixNano()))
