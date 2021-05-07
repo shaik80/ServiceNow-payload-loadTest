@@ -35,6 +35,10 @@ func main() {
 	password := flag.String("password", "", "serviceNow password")
 	batchSize := flag.Int("batchSize", 1, "Batch size to send number of nodes")
 	dataType := flag.String("data", "all", "type of data to send: node or compliance or all")
+	concurrency := flag.Int("concurrency", 1, "Number of concurrent requests to run")
+
+	maxGoroutines := concurrency
+
 	flag.Parse()
 	if *numberOfNodes <= 0 {
 		err = true
@@ -62,7 +66,7 @@ func main() {
 	}
 
 	if !err {
-		batchSizeRequest(*numberOfNodes, *url, *username, *password, *batchSize, *dataType)
+		batchSizeRequest(*numberOfNodes, *url, *username, *password, *batchSize, *dataType, *maxGoroutines)
 	}
 }
 func replaceAndAppend(res *[]map[string]interface{}, doneChannel chan bool, index int, stringJsonData string, datatype string) {
@@ -84,7 +88,7 @@ func replaceAndAppend(res *[]map[string]interface{}, doneChannel chan bool, inde
 	doneChannel <- true
 }
 
-func homePage(numberOfNodes int, url string, username string, password string, datatype string) {
+func homePage(numberOfNodes int, url string, username string, password string, datatype string, doneChannel chan bool, guard chan struct{}) {
 
 	file, _ := ioutil.ReadFile("payload.json")
 	stringJsonData := string(file)
@@ -98,34 +102,40 @@ func homePage(numberOfNodes int, url string, username string, password string, d
 	for i := 0; i < numberOfNodes; i++ {
 		<-doneChannelReplaceAppend
 	}
-	// jsonResponse, jsonError := json.Marshal(resultSlice)
-	// if jsonError != nil {
-	// 	fmt.Println("Unable to encode JSON")
-	// }
+
 	fmt.Println("Node size per request :::::: ", numberOfNodes)
 	sendNotification(resultSlice, url, username, password)
-	// doneChannel <- true
+	// time.Sleep(time.Second * 2)
+	<-guard
+	doneChannel <- true
 }
 
-func batchSizeRequest(numberOfNodes int, url string, username string, password string, batchSize int, datatype string) {
-	// doneChannelBatchSize := make(chan bool)
-
-	numberOfBatchRequest := math.Trunc(float64(numberOfNodes / batchSize))
-
+func batchSizeRequest(numberOfNodes int, url string, username string, password string, batchSize int, datatype string, maxGoroutines int) {
+	doneChannelBatchSize := make(chan bool)
+	numberOfBatchRequest := int(math.Trunc(float64(numberOfNodes / batchSize)))
 	singleRequest := numberOfNodes % batchSize
-
-	for i := 0; i < int(numberOfBatchRequest); i++ {
-		homePage(batchSize, url, username, password, datatype)
-	}
-	// for i := 0; i < int(numberOfBatchRequest); i++ {
-	// 	<-doneChannelBatchSize
-	// }
 	if singleRequest != 0 {
-		homePage(singleRequest, url, username, password, datatype)
+		numberOfBatchRequest++
 	}
-	// if singleRequest != 0 {
-	// 	<-doneChannelBatchSize
-	// }
+
+	if numberOfBatchRequest < maxGoroutines {
+		fmt.Println("Since number Of batches " + fmt.Sprintf("%d", numberOfBatchRequest) + " is less than concurrency " + fmt.Sprintf("%d", maxGoroutines) + ". So using comcurrency of 1.")
+		maxGoroutines = 1
+	}
+
+	guard := make(chan struct{}, maxGoroutines)
+
+	for i := 0; i < numberOfBatchRequest; i++ {
+		guard <- struct{}{}
+		if i == numberOfBatchRequest-1 && singleRequest != 0 {
+			go homePage(singleRequest, url, username, password, datatype, doneChannelBatchSize, guard)
+		} else {
+			go homePage(batchSize, url, username, password, datatype, doneChannelBatchSize, guard)
+		}
+	}
+	for i := 0; i < numberOfBatchRequest; i++ {
+		<-doneChannelBatchSize
+	}
 }
 
 func randomNodeId() string {

@@ -20,6 +20,8 @@ There are 2 ways:
         ```
           -batchSize int
                 Batch size to send number of nodes
+          -concurrency int
+                Number of concurrent requests to run (default 1)
           -data string
                 type of data to send: node or compliance or all (default "all")
           -numberOfNodes int
