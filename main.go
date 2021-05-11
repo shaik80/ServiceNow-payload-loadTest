@@ -205,6 +205,12 @@ func sendNotification(data []map[string]interface{}, url string, username string
 	} else {
 		endTime := time.Now().UnixNano() / 1000000
 		fmt.Println("Asset data posted to ", url, "Status ", response.Status)
+		bodyBytes, err := ioutil.ReadAll(response.Body)
+		if err != nil {
+			log.Fatal(err)
+		}
+		bodyString := string(bodyBytes)
+		fmt.Println("Message body", bodyString)
 		fmt.Println("Time taken to send data to serviceNow is ", endTime-startTime, "Millisecond")
 
 	}
