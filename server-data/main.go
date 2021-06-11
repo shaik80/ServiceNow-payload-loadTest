@@ -7,6 +7,7 @@ package main
 import (
 	"bytes"
 	"compress/gzip"
+	"crypto/tls"
 	"errors"
 	"fmt"
 	"io/ioutil"
@@ -159,7 +160,7 @@ func main() {
 		}
 	}
 
-	err = sendNotification(tplc, "https://a2-dev.test:2000/api/v0/events/data-collector", "6CYotJxooVPotCVryLxgPJ10zQQ=")
+	err = sendNotification(tplc, "https://ec2-13-233-86-54.ap-south-1.compute.amazonaws.com/api/v0/events/data-collector", "OTsmSLhhLLeSIrNN6AloGDykP-M=")
 	if err != nil {
 		fmt.Println("Error", err)
 	}
@@ -190,6 +191,8 @@ func sendNotification(buffer bytes.Buffer, url string, token string) error {
 		return err
 	}
 
+	fmt.Println(buffer.String())
+
 	request, err := http.NewRequest("POST", url, &contentBuffer)
 	if err != nil {
 		fmt.Println("Error creating request")
@@ -200,7 +203,11 @@ func sendNotification(buffer bytes.Buffer, url string, token string) error {
 	request.Header.Add("Content-Encoding", "gzip")
 	request.Header.Add("Accept", "*/*")
 
-	var client http.Client
+	// var client http.Client
+	config := &http.Transport{
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+	}
+	client := &http.Client{Transport: config}
 	var acceptedStatusCodes = []int32{200, 201, 202, 203, 204}
 
 	response, err := client.Do(request)
