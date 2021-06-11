@@ -22,9 +22,8 @@
                 "code_desc": "Operating System Detection",
                 "resource": "Operating System Detection",
                 "run_time": 0.000008,
-                "skip_message": "Skipped control due to only_if condition.",
                 "start_time": "2018-06-27T15:02:21+01:00",
-                "status": "skipped"
+                "status": "passed"
               }
             ],
             "source_location": {
@@ -360,8 +359,8 @@
         ],
         "license": "Apache 2 license",
         "maintainer": "DevSec Hardening Framework Team",
-        "name": "apache-baseline",
-        "sha256": "3e1310b071dc4d706263e9d07083e10a92b4b69e4a36cffa1eda7eaecc09969a",
+        "name": "{{.ProfileName}}",
+        "sha256": "3e1310b071dc4d706263e9d07083e10a92b4b69e4a36cffa1eda7eaec{{.ProfileSHA}}",
         "summary": "Test-suite for best-practice apache hardening",
         "supports": [
           {
@@ -369,7 +368,7 @@
           }
         ],
         "title": "{{.ProfileName}}",
-        "version": "2.0.2"
+        "version": "{{.ProfileVersion}}"
       }
     ],
     "recipes": [

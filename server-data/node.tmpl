@@ -1,7 +1,7 @@
 {
   "chef_server_fqdn": "{{.Hostname}}",
   "end_time": "{{.EndTime}}",
-  "entity_uuid": "d92fbcb5-9ccf-3fed-997f-1f77c2e988b3",
+  "entity_uuid": "{{.EntityUUID}}",
   "expanded_run_list": {
     "id": "_default",
     "run_list": [
@@ -51,9 +51,9 @@
       },
       "cloud": {
         "local_hostname": "ip-55-37-254-176.us-west-2.compute.internal",
-        "local_ipv4": "55.37.254.176",
+        "local_ipv4": "{{.IpAddress}}",
         "private_ips": [
-          "55.37.254.176"
+          "{{.IpAddress}}"
         ],
         "provider": "ec2",
         "public_hostname": null,
@@ -64,9 +64,9 @@
       },
       "cloud_v2": {
         "local_hostname": "ip-55-37-254-176.us-west-2.compute.internal",
-        "local_ipv4": "55.37.254.176",
+        "local_ipv4": "{{.IpAddress}}",
         "local_ipv4_addrs": [
-          "55.37.254.176"
+          "{{.IpAddress}}"
         ],
         "provider": "ec2"
       },
@@ -1790,8 +1790,8 @@
           "enabled": false
         }
       },
-      "fqdn": "chef-load-1",
-      "hostname": "ip-55-37-254-176",
+      "fqdn": "{{.NodeName}}",
+      "hostname": "{{.Hostnamestr}}",
       "hostnamectl": {
         "architecture": "x86-64",
         "boot_id": "e5125da1b10041a8acae191bb2690719",
@@ -1808,8 +1808,8 @@
       "idletime_seconds": 22399857,
       "init_package": "systemd",
       "ip6address": "fe80::42:c4ff:fe52:1540",
-      "ipaddress": "55.37.254.176",
-      "json?": "{\n  \"devpayProductCodes\" : null,\n  \"privateIp\" : \"55.37.254.176\",\n  \"availabilityZone\" : \"us-west-2a\",\n  \"version\" : \"2010-08-31\",\n  \"pendingTime\" : \"2017-06-05T23:37:13Z\",\n  \"instanceId\" : \"i-0aee75f0b4b0d9f22\",\n  \"billingProducts\" : [ \"bp-6fa54006\" ],\n  \"instanceType\" : \"t2.medium\",\n  \"accountId\" : \"999999999999\",\n  \"architecture\" : \"x86_64\",\n  \"kernelId\" : null,\n  \"ramdiskId\" : null,\n  \"imageId\" : \"ami-4dbf9e7d\",\n  \"region\" : \"us-west-2\"\n}",
+      "ipaddress": "{{.IpAddress}}",
+      "json?": "{\n  \"devpayProductCodes\" : null,\n  \"privateIp\" : \"{{.IpAddress}}\",\n  \"availabilityZone\" : \"us-west-2a\",\n  \"version\" : \"2010-08-31\",\n  \"pendingTime\" : \"2017-06-05T23:37:13Z\",\n  \"instanceId\" : \"i-0aee75f0b4b0d9f22\",\n  \"billingProducts\" : [ \"bp-6fa54006\" ],\n  \"instanceType\" : \"t2.medium\",\n  \"accountId\" : \"999999999999\",\n  \"architecture\" : \"x86_64\",\n  \"kernelId\" : null,\n  \"ramdiskId\" : null,\n  \"imageId\" : \"ami-4dbf9e7d\",\n  \"region\" : \"us-west-2\"\n}",
       "kernel": {
         "machine": "x86_64",
         "modules": {
@@ -2042,7 +2042,7 @@
               "02:42:C4:52:15:40": {
                 "family": "lladdr"
               },
-              "55.37.254.176": {
+              "{{.IpAddress}}": {
                 "broadcast": "55.37.15.255",
                 "family": "inet",
                 "netmask": "255.255.248.0",
@@ -2083,7 +2083,7 @@
                 "family": "inet",
                 "proto": "kernel",
                 "scope": "link",
-                "src": "55.37.254.176"
+                "src": "{{.IpAddress}}"
               },
               {
                 "destination": "55.37.8.0/21",
@@ -2091,7 +2091,7 @@
                 "metric": "100",
                 "proto": "kernel",
                 "scope": "link",
-                "src": "55.37.254.176"
+                "src": "{{.IpAddress}}"
               },
               {
                 "destination": "fe80::/64",
@@ -5680,7 +5680,7 @@
     "chef_environment": "{{.ChefEnvironment}}",
     "chef_type": "node",
     "json_class": "Chef::Node",
-    "name": "chef-load-1",
+    "name": "{{.NodeName}}",
     "normal": {
       "application": "delightful",
       "attr1": "{{.Attr}}",
@@ -5694,7 +5694,7 @@
       "recipe[{{.Recipe3}}]"
     ]
   },
-  "node_name": "chef-load-1",
+  "node_name": "{{.NodeName}}",
   "organization_name": "{{.OrganizationName}}",
   "resources": [
     {
