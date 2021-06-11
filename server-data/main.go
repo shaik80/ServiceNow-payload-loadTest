@@ -8,6 +8,7 @@ import (
 	"bytes"
 	"compress/gzip"
 	"crypto/tls"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io/ioutil"
@@ -94,7 +95,7 @@ func main() {
 	var data = []comp{
 		{
 			"2021-06-11T07:02:25Z",
-			"DevSec Dev_Gamma",
+			"DevSec Dev_Gamma1",
 			"chef-load-violet-waxwing-yellow",
 			"2a463196-970c-3ecc-97bc-46945d0844da",
 			"debian",
@@ -141,7 +142,7 @@ func main() {
 		}
 	}
 
-	fmt.Println(tpl.String())
+	// fmt.Println(tpl.String())
 
 	// Create a new template and parse the letter into it.
 	tmplc := template.New("compliance.tmpl")
@@ -160,7 +161,17 @@ func main() {
 		}
 	}
 
-	err = sendNotification(tplc, "https://ec2-13-233-86-54.ap-south-1.compute.amazonaws.com/api/v0/events/data-collector", "OTsmSLhhLLeSIrNN6AloGDykP-M=")
+	mydoc := map[string]interface{}{}
+	fmt.Println("here::::1")
+
+	err = json.Unmarshal([]byte(tplc.String()), &mydoc)
+	if err != nil {
+		fmt.Println("Error::::::", err)
+		return
+	}
+	fmt.Println("here::::2")
+
+	err = sendNotification(tplc.String(), "https://ec2-13-233-86-54.ap-south-1.compute.amazonaws.com/api/v0/events/data-collector", "OTsmSLhhLLeSIrNN6AloGDykP-M=")
 	if err != nil {
 		fmt.Println("Error", err)
 	}
@@ -169,16 +180,16 @@ func main() {
 
 }
 
-func sendNotification(buffer bytes.Buffer, url string, token string) error {
+func sendNotification(data string, url string, token string) error {
 
 	startTime := time.Now().UnixNano() / 1000000
-	// var buffer bytes.Buffer
-	// for _, message := range data {
-	// 	data1, _ := json.Marshal(message)
-	// 	data1 = bytes.ReplaceAll(data1, []byte("\n"), []byte("\f"))
-	// 	buffer.Write(data1)
-	// 	buffer.WriteString("\n")
-	// }
+	var buffer bytes.Buffer
+	for _, message := range data {
+		data1, _ := json.Marshal(message)
+		data1 = bytes.ReplaceAll(data1, []byte("\n"), []byte("\f"))
+		buffer.Write(data1)
+		buffer.WriteString("\n")
+	}
 
 	var contentBuffer bytes.Buffer
 	zip := gzip.NewWriter(&contentBuffer)
@@ -191,9 +202,7 @@ func sendNotification(buffer bytes.Buffer, url string, token string) error {
 		return err
 	}
 
-	fmt.Println(buffer.String())
-
-	request, err := http.NewRequest("POST", url, &contentBuffer)
+	request, err := http.NewRequest("POST", url, bytes.NewBuffer([]byte(data)))
 	if err != nil {
 		fmt.Println("Error creating request")
 		return err
