@@ -146,81 +146,6 @@ func main() {
 		makeRequest(*numberOfElements, *url, *apiToken, *dataType, *maxGoroutines)
 	}
 
-	// var recipients = []Recipient{
-	// 	{
-	// 		"vivek-test",
-	// 		"ip-22.22.22.3",
-	// 		"22.22.22.3",
-	// 		"hostname",
-	// 		"2021-06-10T11:55:52Z",
-	// 		"2021-06-10T11:47:52Z",
-	// 		"nginx::default",
-	// 		"tomcat::default",
-	// 		"yum::default",
-	// 		"c2fb9ee4-13ec-4c48-a495-8d6a52710e33",
-	// 		"ubuntu",
-	// 		"extra_who_died_on_ER",
-	// 		"grassland3",
-	// 		"something",
-	// 		"network_device",
-	// 		"The Defenders",
-	// 		"nginx", "0.1.0",
-	// 		"chef-sugar",
-	// 		"c2fb9ee4-13ec-4c48-a495-8d6a52710e33",
-	// 	},
-	// }
-
-	// var data = []comp{
-	// 	{
-	// 		"2021-06-11T07:02:25Z",
-	// 		"DevSec Dev_Gamma1",
-	// 		"chef-load-violet-waxwing-yellow",
-	// 		"2a463196-970c-3ecc-97bc-46945d0844da",
-	// 		"debian",
-	// 		"8.11",
-	// 		"apache-01",
-	// 		"apache-02",
-	// 		"apache-03",
-	// 		"apache-04",
-	// 		"apache-05",
-	// 		"apache-06",
-	// 		"apache-07",
-	// 		"apache-08",
-	// 		"apache-09",
-	// 		"apache-10",
-	// 		"apache-11",
-	// 		"apache-12",
-	// 		"apache-13",
-	// 		"apache-14",
-	// 		"DevSec Apache Baseline",
-	// 		"linux::harden",
-	// 		"tomcat",
-	// 		"tomcat::setup",
-	// 		"base_windows",
-	// 		"windows-hardening",
-	// 		"best.role.ever",
-	// 		"5fb3688a-90e3-4571-bed6-0067432d1878",
-	// 	},
-	// }
-
-	// Execute the template for each recipient.
-
-	// fmt.Println(tpl.String())
-
-	// Execute the template for each recipient.
-
-	// mydoc := map[string]interface{}{}
-	// fmt.Println("here::::1", tpl.String())
-
-	// err := json.Unmarshal([]byte(tplc.String()), &mydoc)
-	// if err != nil {
-	// 	fmt.Println("Error::::::", err)
-	// 	return
-	// }
-	// fmt.Println("here::::2")
-
-	// fmt.Println(tplc.String())
-
 }
 
 func makeRequest(numberOfElements int, endpoint string, apiToken string, dataType string, maxGoroutines int) {
@@ -266,25 +191,7 @@ func makeRequest(numberOfElements int, endpoint string, apiToken string, dataTyp
 
 		for _, r := range nodeData {
 			guard <- struct{}{}
-			go func(guard chan struct{}, r node, doneChannel chan bool) {
-				var tpl bytes.Buffer
-				// Create a new template and parse the letter into it.
-				tmpl := template.New("node.tmpl")
-				t, err := tmpl.ParseFiles("node.tmpl")
-				if err != nil {
-					panic(err)
-				}
-				err = t.Execute(&tpl, r)
-				if err != nil {
-					log.Println("executing template:", err)
-				}
-				err = sendNotification(tpl.String(), endpoint, apiToken)
-				if err != nil {
-					fmt.Println("Error", err)
-				}
-				<-guard
-				doneChannel <- true
-			}(guard, r, doneChannel)
+			go processTemplateAndSend(guard, r, doneChannel, endpoint, apiToken, "node.tmpl")
 		}
 
 	} else if dataType == "compliance" {
@@ -326,32 +233,33 @@ func makeRequest(numberOfElements int, endpoint string, apiToken string, dataTyp
 		for _, r := range complianceData {
 
 			guard <- struct{}{}
-
-			go func(guard chan struct{}, r comp, doneChannel chan bool) {
-				var tplc bytes.Buffer
-				tmplc := template.New("compliance.tmpl")
-
-				tr, errr := tmplc.ParseFiles("compliance.tmpl")
-				if errr != nil {
-					panic(errr)
-				}
-				err := tr.Execute(&tplc, r)
-				if err != nil {
-					log.Println("executing template:", err)
-				}
-				err = sendNotification(tplc.String(), endpoint, apiToken)
-				if err != nil {
-					fmt.Println("Error", err)
-				}
-				<-guard
-				doneChannel <- true
-			}(guard, r, doneChannel)
+			go processTemplateAndSend(guard, r, doneChannel, endpoint, apiToken, "compliance.tmpl")
 		}
 	}
 	for i := 0; i < numberOfElements; i++ {
 		<-doneChannel
 	}
 
+}
+
+func processTemplateAndSend(guard chan struct{}, r interface{}, doneChannel chan bool, endpoint string, apiToken string, fileName string) {
+	var tpl bytes.Buffer
+	// Create a new template and parse the letter into it.
+	tmpl := template.New(fileName)
+	t, err := tmpl.ParseFiles(fileName)
+	if err != nil {
+		panic(err)
+	}
+	err = t.Execute(&tpl, r)
+	if err != nil {
+		log.Println("executing template:", err)
+	}
+	err = sendNotification(tpl.String(), endpoint, apiToken)
+	if err != nil {
+		fmt.Println("Error", err)
+	}
+	<-guard
+	doneChannel <- true
 }
 
 func sendNotification(data string, url string, token string) error {
