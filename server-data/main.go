@@ -84,7 +84,7 @@ type node struct {
 const nodeDataFolder = "node-data"
 const complianceDataFolder = "compliance-data"
 
-var complianceFiles = []string{"complainceStatus.tmpl", "compliance.tmpl"}
+var counter = 0
 
 const charset = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 
@@ -102,7 +102,6 @@ func getFileArr(path string) []string {
 	}
 	var fileNames []string
 	for _, f := range files {
-		fmt.Println(f.Name())
 		fileNames = append(fileNames, f.Name())
 	}
 	return fileNames
@@ -306,6 +305,8 @@ func processTemplateAndSend(guard chan struct{}, r interface{}, doneChannel chan
 	if err != nil {
 		fmt.Println("Error", err)
 	}
+	counter++
+	fmt.Println("Total done", counter)
 	<-guard
 	doneChannel <- true
 }
