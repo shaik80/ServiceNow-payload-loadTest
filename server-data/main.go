@@ -81,6 +81,11 @@ type node struct {
 	RunID string
 }
 
+const nodeDataFolder = "node-data"
+const complianceDataFolder = "compliance-data"
+
+var complianceFiles = []string{"complainceStatus.tmpl", "compliance.tmpl"}
+
 const charset = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 
 var seededRand *rand.Rand = rand.New(
@@ -88,6 +93,19 @@ var seededRand *rand.Rand = rand.New(
 
 func String(length int) string {
 	return StringWithCharset(length, charset)
+}
+
+func getFileArr(path string) []string {
+	files, err := ioutil.ReadDir(path)
+	if err != nil {
+		log.Fatal(err)
+	}
+	var fileNames []string
+	for _, f := range files {
+		fmt.Println(f.Name())
+		fileNames = append(fileNames, f.Name())
+	}
+	return fileNames
 }
 
 func StringWithCharset(length int, charset string) string {
@@ -155,10 +173,9 @@ func pickStatus() string {
 	return status[val]
 }
 
-func pickSuccessOrFailureFile() string {
-	status := []string{"successnode.tmpl", "failurenode.tmpl"}
-	val := randInt(0, 2)
-	return status[val]
+func pickSuccessOrFailureFile(filearr []string) string {
+	val := randInt(0, len(filearr))
+	return filearr[val]
 }
 
 func makeRequest(numberOfElements int, endpoint string, apiToken string, dataType string, maxGoroutines int) {
@@ -184,8 +201,8 @@ func makeRequest(numberOfElements int, endpoint string, apiToken string, dataTyp
 				"ip-" + generateIpAddress(),
 				generateIpAddress(),
 				"testhost" + String(8),
-				"2021-06-10T11:55:52Z",
-				"2021-06-10T11:47:52Z",
+				currentTimestamp(),
+				currentTimestamp(),
 				"nginx::default" + String(3),
 				"tomcat::default" + String(3),
 				"yum::default" + String(3),
@@ -205,9 +222,10 @@ func makeRequest(numberOfElements int, endpoint string, apiToken string, dataTyp
 
 		for _, r := range nodeData {
 			guard <- struct{}{}
-			file := pickSuccessOrFailureFile()
-			fmt.Println(":::::::::", file)
-			go processTemplateAndSend(guard, r, doneChannel, endpoint, apiToken, file)
+			nodefiles := getFileArr(nodeDataFolder)
+			file := pickSuccessOrFailureFile(nodefiles)
+			fmt.Println("file used for node", file)
+			go processTemplateAndSend(guard, r, doneChannel, endpoint, apiToken, nodeDataFolder, file)
 		}
 
 	} else if dataType == "compliance" {
@@ -215,7 +233,7 @@ func makeRequest(numberOfElements int, endpoint string, apiToken string, dataTyp
 			complianceData[i] = comp{
 				"2.1." + fmt.Sprintf("%d", randInt(0, 11)),
 				String(5),
-				"2021-06-14T07:02:25Z",
+				currentTimestamp(),
 				"DevSec " + String(3) + " " + String(5),
 				"chef-test-violet-waxwing-yellow-" + String(6),
 				randomserialNumber(),
@@ -247,9 +265,11 @@ func makeRequest(numberOfElements int, endpoint string, apiToken string, dataTyp
 		}
 
 		for _, r := range complianceData {
-
 			guard <- struct{}{}
-			go processTemplateAndSend(guard, r, doneChannel, endpoint, apiToken, "complainceStatus.tmpl")
+			complianceFiles := getFileArr(complianceDataFolder)
+			file := pickSuccessOrFailureFile(complianceFiles)
+			fmt.Println("file used for compliance", file)
+			go processTemplateAndSend(guard, r, doneChannel, endpoint, apiToken, complianceDataFolder, file)
 		}
 	}
 	for i := 0; i < numberOfElements; i++ {
@@ -258,10 +278,23 @@ func makeRequest(numberOfElements int, endpoint string, apiToken string, dataTyp
 
 }
 
-func processTemplateAndSend(guard chan struct{}, r interface{}, doneChannel chan bool, endpoint string, apiToken string, fileName string) {
+func currentTimestamp() string {
+	// randomTime := rand.Int63n(time.Now().Unix()-94608000) + 94608000
+	timeNow := time.Now().Unix()
+	now := time.Unix(timeNow, 0)
+	loc, err := time.LoadLocation("UTC")
+	if err != nil {
+		fmt.Println(err)
+		return "2021-06-14T07:02:25Z"
+	}
+	const DateTimeFormat = "2006-01-02T15:04:05Z"
+	return now.In(loc).Format(DateTimeFormat)
+}
+
+func processTemplateAndSend(guard chan struct{}, r interface{}, doneChannel chan bool, endpoint string, apiToken string, folder string, fileName string) {
 	var tpl bytes.Buffer
 	tmpl := template.New(fileName)
-	t, err := tmpl.ParseFiles(fileName)
+	t, err := tmpl.ParseFiles(folder + "/" + fileName)
 	if err != nil {
 		panic(err)
 	}
