@@ -57,6 +57,7 @@ type comp struct {
 
 // Prepare some data to insert into the template.
 type node struct {
+	Status,
 	EntityUUID,
 	NodeName,
 	Hostnamestr,
@@ -148,6 +149,18 @@ func main() {
 
 }
 
+func pickStatus() string {
+	status := []string{"success", "failure"}
+	val := randInt(0, 2)
+	return status[val]
+}
+
+func pickSuccessOrFailureFile() string {
+	status := []string{"successnode.tmpl", "failurenode.tmpl"}
+	val := randInt(0, 2)
+	return status[val]
+}
+
 func makeRequest(numberOfElements int, endpoint string, apiToken string, dataType string, maxGoroutines int) {
 
 	if numberOfElements < maxGoroutines {
@@ -165,6 +178,7 @@ func makeRequest(numberOfElements int, endpoint string, apiToken string, dataTyp
 	if dataType == "node" {
 		for i := 0; i < numberOfElements; i++ {
 			nodeData[i] = node{
+				pickStatus(),
 				randomserialNumber(),
 				String(10),
 				"ip-" + generateIpAddress(),
@@ -183,7 +197,7 @@ func makeRequest(numberOfElements int, endpoint string, apiToken string, dataTyp
 				"network_device" + String(3),
 				"The " + String(8),
 				String(6),
-				"0.1." + fmt.Sprintf("%d", randInt(0, 10)),
+				"0.1." + fmt.Sprintf("%d", randInt(0, 11)),
 				"chef-" + String(5),
 				randomserialNumber(),
 			}
@@ -191,20 +205,22 @@ func makeRequest(numberOfElements int, endpoint string, apiToken string, dataTyp
 
 		for _, r := range nodeData {
 			guard <- struct{}{}
-			go processTemplateAndSend(guard, r, doneChannel, endpoint, apiToken, "node.tmpl")
+			file := pickSuccessOrFailureFile()
+			fmt.Println(":::::::::", file)
+			go processTemplateAndSend(guard, r, doneChannel, endpoint, apiToken, file)
 		}
 
 	} else if dataType == "compliance" {
 		for i := 0; i < numberOfElements; i++ {
 			complianceData[i] = comp{
-				"2.1." + fmt.Sprintf("%d", randInt(0, 10)),
+				"2.1." + fmt.Sprintf("%d", randInt(0, 11)),
 				String(5),
-				"2021-06-11T07:02:25Z",
+				"2021-06-14T07:02:25Z",
 				"DevSec " + String(3) + " " + String(5),
 				"chef-test-violet-waxwing-yellow-" + String(6),
 				randomserialNumber(),
 				"debian",
-				"8." + fmt.Sprintf("%d", randInt(10, 20)),
+				"8." + fmt.Sprintf("%d", randInt(10, 21)),
 				"apache-01",
 				"apache-02",
 				"apache-03",
@@ -233,7 +249,7 @@ func makeRequest(numberOfElements int, endpoint string, apiToken string, dataTyp
 		for _, r := range complianceData {
 
 			guard <- struct{}{}
-			go processTemplateAndSend(guard, r, doneChannel, endpoint, apiToken, "compliance.tmpl")
+			go processTemplateAndSend(guard, r, doneChannel, endpoint, apiToken, "complainceStatus.tmpl")
 		}
 	}
 	for i := 0; i < numberOfElements; i++ {
@@ -244,7 +260,6 @@ func makeRequest(numberOfElements int, endpoint string, apiToken string, dataTyp
 
 func processTemplateAndSend(guard chan struct{}, r interface{}, doneChannel chan bool, endpoint string, apiToken string, fileName string) {
 	var tpl bytes.Buffer
-	// Create a new template and parse the letter into it.
 	tmpl := template.New(fileName)
 	t, err := tmpl.ParseFiles(fileName)
 	if err != nil {
@@ -283,6 +298,8 @@ func sendNotification(data string, url string, token string) error {
 	if err != nil {
 		return err
 	}
+
+	// fmt.Println(data)
 
 	request, err := http.NewRequest("POST", url, bytes.NewBuffer([]byte(data)))
 	if err != nil {
