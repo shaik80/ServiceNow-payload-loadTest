@@ -15,6 +15,7 @@ import (
 	"time"
 
 	uuid "github.com/satori/go.uuid"
+	"gopkg.in/gookit/color.v1"
 )
 
 var counter = 0
@@ -75,7 +76,7 @@ func pickSuccessOrFailureFile(filearr []string) string {
 	return filearr[val]
 }
 
-func makeRequest(numberOfElements int, endpoint string, apiToken string, dataType string, status string, maxGoroutines int) {
+func makeRequest(numberOfElements int, endpoint string, apiToken string, dataType string, status string, large bool, maxGoroutines int) {
 
 	if numberOfElements < maxGoroutines {
 		maxGoroutines = 1
@@ -120,8 +121,8 @@ func makeRequest(numberOfElements int, endpoint string, apiToken string, dataTyp
 		for _, r := range nodeData {
 			guard <- struct{}{}
 			// nodefiles := getFileArr(nodeDataFolder)
-			file := pickProperFile(dataType, status)
-			fmt.Println("file used for node", file)
+			file := pickProperFile(dataType, status, large)
+			color.Note.Println("file used for node", file)
 			go processTemplateAndSend(guard, r, doneChannel, endpoint, apiToken, nodeDataFolder, file)
 		}
 
@@ -165,8 +166,8 @@ func makeRequest(numberOfElements int, endpoint string, apiToken string, dataTyp
 			guard <- struct{}{}
 			// complianceFiles := getFileArr(complianceDataFolder)
 			// file := pickSuccessOrFailureFile(complianceFiles)
-			file := pickProperFile(dataType, status)
-			fmt.Println("file used for compliance", file)
+			file := pickProperFile(dataType, status, large)
+			color.Note.Println("file used for compliance", file)
 			go processTemplateAndSend(guard, r, doneChannel, endpoint, apiToken, complianceDataFolder, file)
 		}
 	}
@@ -176,10 +177,16 @@ func makeRequest(numberOfElements int, endpoint string, apiToken string, dataTyp
 
 }
 
-func pickProperFile(dataType string, status string) string {
+func pickProperFile(dataType string, status string, large bool) string {
 	if dataType == "node" {
+		if status == "" && large {
+			return nodeFile["large"]
+		}
 		return nodeFile[status]
 	} else {
+		if status == "" && large {
+			return complianceFile["large"]
+		}
 		return complianceFile[status]
 	}
 }
@@ -213,7 +220,7 @@ func processTemplateAndSend(guard chan struct{}, r interface{}, doneChannel chan
 		fmt.Println("Error", err)
 	}
 	counter++
-	fmt.Println("Total done", counter)
+	color.Notice.Println("Total done ", counter)
 	<-guard
 	doneChannel <- true
 }
@@ -265,14 +272,14 @@ func sendNotification(data string, url string, token string) error {
 		return err
 	} else {
 		endTime := time.Now().UnixNano() / 1000000
-		fmt.Println("Asset data posted to ", url, "Status ", response.Status)
+		color.Success.Println("Asset data posted to ", url, "Status ", response.Status)
 		bodyBytes, err := ioutil.ReadAll(response.Body)
 		if err != nil {
 			log.Fatal(err)
 		}
 		bodyString := string(bodyBytes)
-		fmt.Println("Message body", bodyString)
-		fmt.Println("Time taken to send data to serviceNow is ", endTime-startTime, "Millisecond")
+		color.Primary.Println("Message body", bodyString)
+		color.Note.Println("Time taken to send data to serviceNow is ", endTime-startTime, " Millisecond")
 
 	}
 	if !IsAcceptedStatusCode(int32(response.StatusCode), acceptedStatusCodes) {
