@@ -160,7 +160,8 @@ func ReplaceData(data string) string {
 	ReplaceIpAddress := strings.ReplaceAll(ReplaceNodeId, "10.127.75.100", generateIpAddress())
 	ReplaceSerialNumber := strings.ReplaceAll(ReplaceIpAddress, "ec2f999c-e79a-0454-6a18-d9942ab11f77", randomserialNumber())
 	ReplaceHostName := strings.ReplaceAll(ReplaceSerialNumber, "VA1IHGDLOY08", String(12))
-	return ReplaceHostName
+	ReplaceClientRunID := strings.ReplaceAll(ReplaceHostName, "29a3c62a-e843-4904-aad9-7a8cb853a3b6", randomserialNumber())
+	return ReplaceClientRunID
 }
 
 func sendNotification(data []map[string]interface{}, url string, username string, password string) error {
