@@ -18,6 +18,66 @@ import (
 	"gopkg.in/gookit/color.v1"
 )
 
+type comp struct {
+	ProfileVersion,
+	ProfileSHA,
+	EndPoint,
+	Environment,
+	NodeName,
+	NodeUUID,
+	PlatformName,
+	PlatformRelease,
+	ProfileID1,
+	ProfileID2,
+	ProfileID3,
+	ProfileID4,
+	ProfileID5,
+	ProfileID6,
+	ProfileID7,
+	ProfileID8,
+	ProfileID9,
+	ProfileID10,
+	ProfileID11,
+	ProfileID12,
+	ProfileID13,
+	ProfileID14,
+	ProfileName,
+	Recipe1,
+	Recipe2,
+	Recipe3,
+	Roles1,
+	Roles2,
+	Roles3,
+	ReportUUID string
+}
+
+// Prepare some data to insert into the template.
+type node struct {
+	Sid,
+	Status,
+	EntityUUID,
+	NodeName,
+	Hostnamestr,
+	IpAddress,
+	Hostname,
+	EndTime,
+	StartTime,
+	Recipe1,
+	Recipe2,
+	Recipe3,
+	ID,
+	Platform,
+	Roles,
+	ChefEnvironment,
+	Attr,
+	NormalTags,
+	OrganizationName,
+	CookbookName,
+	CookbookVersion,
+	CookbookID,
+	RunID string
+}
+
 var counter = 0
 
 const charset = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
@@ -93,6 +153,7 @@ func makeRequest(numberOfElements int, endpoint string, apiToken string, dataTyp
 	if dataType == "node" {
 		for i := 0; i < numberOfElements; i++ {
 			nodeData[i] = node{
+				randomserialNumber(),
 				pickStatus(),
 				randomserialNumber(),
 				String(10),
