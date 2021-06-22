@@ -14,23 +14,21 @@ const (
 	nodeDataFolder        = "node-data"
 	complianceDataFolder  = "compliance-data"
 	nodeSuccessfile       = "successnode.tmpl"
-	nodeLargefile         = "successnode.tmpl"
 	nodefailurefile       = "failurenode.tmpl"
 	complianceSuccessFile = "compliance.tmpl"
 	complianceFailureFile = "complainceStatus.tmpl"
-	complianceLargeFile   = "complainceStatus.tmpl"
 )
 
 var nodeFile = map[string]string{
-	"success": "successnode.tmpl",
-	"failure": "failurenode.tmpl",
-	"large":   "successnode.tmpl",
+	"success": nodeSuccessfile,
+	"failure": nodefailurefile,
+	"large":   nodeSuccessfile,
 }
 
 var complianceFile = map[string]string{
-	"success": "compliance.tmpl",
-	"failure": "complainceStatus.tmpl",
-	"large":   "complainceStatus.tmpl",
+	"success": complianceSuccessFile,
+	"failure": complianceFailureFile,
+	"large":   complianceFailureFile,
 }
 
 func main() {

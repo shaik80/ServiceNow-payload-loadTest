@@ -1790,7 +1790,7 @@
             ],
             "encapsulation": "Ethernet",
             "addresses": {
-              "02:3F:B5:7E:AD:FF": {
+              "{{.MacAdd}}": {
                 "family": "lladdr"
               },
               "{{.IpAddress}}": {
@@ -1888,7 +1888,7 @@
         }
       },
       "ipaddress": "{{.IpAddress}}",
-      "macaddress": "02:3F:B5:7E:AD:FF",
+      "macaddress": "{{.MacAdd}}",
       "ip6address": "fe80::3f:b5ff:fe7e:adff",
       "lsb": {
 
@@ -5137,15 +5137,15 @@
         "instance_type": "m3.medium",
         "local_hostname": "ip-127-208-184-141.us-west-2.compute.internal",
         "local_ipv4": "{{.IpAddress}}",
-        "mac": "02:3f:b5:7e:ad:ff",
+        "mac": "{{.MacAdd}}",
         "metrics_vhostmd": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>",
         "network_interfaces_macs": {
-          "02:3f:b5:7e:ad:ff": {
+          "{{.MacAdd}}": {
             "device_number": "0",
             "interface_id": "eni-e43aa883",
             "local_hostname": "ip-127-208-184-141.us-west-2.compute.internal",
             "local_ipv4s": "{{.IpAddress}}",
-            "mac": "02:3f:b5:7e:ad:ff",
+            "mac": "{{.MacAdd}}",
             "owner_id": "862552916454",
             "security_group_ids": "sg-96274af3",
             "security_groups": "default",

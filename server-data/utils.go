@@ -53,6 +53,7 @@ type comp struct {
 
 // Prepare some data to insert into the template.
 type node struct {
+	MacAdd,
 	Sid,
 	Status,
 	EntityUUID,
@@ -153,6 +154,7 @@ func makeRequest(numberOfElements int, endpoint string, apiToken string, dataTyp
 	if dataType == "node" {
 		for i := 0; i < numberOfElements; i++ {
 			nodeData[i] = node{
+				"02:" + String(2) + ":" + String(2) + ":" + String(2) + ":" + String(2) + ":" + String(2),
 				randomserialNumber(),
 				pickStatus(),
 				randomserialNumber(),
@@ -183,7 +185,7 @@ func makeRequest(numberOfElements int, endpoint string, apiToken string, dataTyp
 			guard <- struct{}{}
 			// nodefiles := getFileArr(nodeDataFolder)
 			file := pickProperFile(dataType, status, large)
-			color.Note.Println("file used for node", file)
+			color.Note.Println("file used for node ", file)
 			go processTemplateAndSend(guard, r, doneChannel, endpoint, apiToken, nodeDataFolder, file)
 		}
 
@@ -228,7 +230,7 @@ func makeRequest(numberOfElements int, endpoint string, apiToken string, dataTyp
 			// complianceFiles := getFileArr(complianceDataFolder)
 			// file := pickSuccessOrFailureFile(complianceFiles)
 			file := pickProperFile(dataType, status, large)
-			color.Note.Println("file used for compliance", file)
+			color.Note.Println("file used for compliance ", file)
 			go processTemplateAndSend(guard, r, doneChannel, endpoint, apiToken, complianceDataFolder, file)
 		}
 	}
