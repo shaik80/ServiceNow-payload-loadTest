@@ -156,12 +156,17 @@ func generateIpAddress() string {
 
 func ReplaceData(data string) string {
 	// node data
-	ReplaceNodeId := strings.ReplaceAll(data, "1304ecea-95bd-4830-b8c9-2cbb33555695", randomNodeId())
-	ReplaceIpAddress := strings.ReplaceAll(ReplaceNodeId, "10.127.75.100", generateIpAddress())
-	ReplaceSerialNumber := strings.ReplaceAll(ReplaceIpAddress, "ec2f999c-e79a-0454-6a18-d9942ab11f77", randomserialNumber())
-	ReplaceHostName := strings.ReplaceAll(ReplaceSerialNumber, "VA1IHGDLOY08", String(12))
-	ReplaceReportID := strings.ReplaceAll(ReplaceHostName, "9049e316-ebed-4572-9368-9a26c781e8da", randomserialNumber())
-	return ReplaceReportID
+	data = strings.ReplaceAll(data, "1304ecea-95bd-4830-b8c9-2cbb33555695", randomNodeId())
+	data = strings.ReplaceAll(data, "10.127.75.100", generateIpAddress())
+	data = strings.ReplaceAll(data, "ec2f999c-e79a-0454-6a18-d9942ab11f77", randomserialNumber())
+	data = strings.ReplaceAll(data, "VA1IHGDLOY08", String(12))
+	reportId := randomserialNumber()
+	clientRun := randomserialNumber()
+	fmt.Println("reportId:::", reportId)
+	fmt.Println("clientRun:::", clientRun)
+	data = strings.ReplaceAll(data, "9049e316-ebed-4572-9368-9a26c781e8da", reportId)
+	data = strings.ReplaceAll(data, "29a3c62a-e843-4904-aad9-7a8cb853a3b6", clientRun)
+	return data
 }
 
 func sendNotification(data []map[string]interface{}, url string, username string, password string) error {
