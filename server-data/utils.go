@@ -11,6 +11,7 @@ import (
 	"log"
 	"math/rand"
 	"net/http"
+	"os"
 	"text/template"
 	"time"
 
@@ -137,8 +138,7 @@ func pickSuccessOrFailureFile(filearr []string) string {
 	return filearr[val]
 }
 
-func makeRequest(numberOfElements int, endpoint string, apiToken string, dataType string, status string, large bool, maxGoroutines int) {
-
+func makeRequest(numberOfElements int, endpoint string, apiToken string, dataType string, status string, large bool, maxGoroutines int, input string, output string) {
 	if numberOfElements < maxGoroutines {
 		maxGoroutines = 1
 	}
@@ -150,14 +150,24 @@ func makeRequest(numberOfElements int, endpoint string, apiToken string, dataTyp
 
 	var nodeData = make([]node, numberOfElements)
 	var complianceData = make([]comp, numberOfElements)
-
+	var arrOfNodeOrCompliance []string
+	var inputFile bool
+	var nodeIDdata map[string][]string
+	if output != "" {
+		inputFile = false
+	}
+	if input != "" {
+		inputFile = true
+		fileNamedata := input + ".json"
+		nodeIDdata = readFile(fileNamedata)
+	}
 	if dataType == "node" {
 		for i := 0; i < numberOfElements; i++ {
 			nodeData[i] = node{
 				"02:" + String(2) + ":" + String(2) + ":" + String(2) + ":" + String(2) + ":" + String(2),
 				randomserialNumber(),
 				pickStatus(),
-				randomserialNumber(),
+				getExistingNodeID(i, nodeIDdata, inputFile),
 				String(10),
 				"ip-" + generateIpAddress(),
 				generateIpAddress(),
@@ -179,6 +189,10 @@ func makeRequest(numberOfElements int, endpoint string, apiToken string, dataTyp
 				"chef-" + String(5),
 				randomserialNumber(),
 			}
+			if output != "" {
+				arrOfNodeOrCompliance = append(arrOfNodeOrCompliance, nodeData[i].EntityUUID)
+			}
+
 		}
 
 		for _, r := range nodeData {
@@ -197,7 +211,7 @@ func makeRequest(numberOfElements int, endpoint string, apiToken string, dataTyp
 				currentTimestamp(),
 				"DevSec " + String(3) + " " + String(5),
 				"chef-test-violet-waxwing-yellow-" + String(6),
-				randomserialNumber(),
+				getExistingNodeID(i, nodeIDdata, inputFile),
 				"debian",
 				"8." + fmt.Sprintf("%d", randInt(10, 21)),
 				"apache-01",
@@ -223,6 +237,9 @@ func makeRequest(numberOfElements int, endpoint string, apiToken string, dataTyp
 				"best.role.ever" + String(5),
 				randomserialNumber(),
 			}
+			if output != "" {
+				arrOfNodeOrCompliance = append(arrOfNodeOrCompliance, complianceData[i].NodeUUID)
+			}
 		}
 
 		for _, r := range complianceData {
@@ -234,10 +251,26 @@ func makeRequest(numberOfElements int, endpoint string, apiToken string, dataTyp
 			go processTemplateAndSend(guard, r, doneChannel, endpoint, apiToken, complianceDataFolder, file)
 		}
 	}
+
 	for i := 0; i < numberOfElements; i++ {
 		<-doneChannel
 	}
 
+	if output != "" {
+		fileNamedata := output + ".json"
+		var jsonArr map[string]interface{}
+		err := json.Unmarshal([]byte("{}"), &jsonArr)
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+		jsonArr["id"] = arrOfNodeOrCompliance
+		jsondata, _ := json.Marshal(jsonArr)
+		if _, err := os.Stat("./Files/" + fileNamedata); os.IsNotExist(err) {
+			createFile(fileNamedata)
+		}
+		writeFile(fileNamedata, jsondata)
+	}
 }
 
 func pickProperFile(dataType string, status string, large bool) string {
@@ -289,7 +322,7 @@ func processTemplateAndSend(guard chan struct{}, r interface{}, doneChannel chan
 }
 
 func sendNotification(data string, url string, token string) error {
-
+	// fmt.Println(len(node.id))
 	startTime := time.Now().UnixNano() / 1000000
 	var buffer bytes.Buffer
 	for _, message := range data {
@@ -362,4 +395,101 @@ func IsAcceptedStatusCode(statusCode int32, acceptedCodes []int32) bool {
 		}
 	}
 	return false
+}
+
+func createFolder() {
+	//Create a folder/directory at a full qualified path
+	err := os.Mkdir("./Files", 0755)
+	if err != nil {
+		log.Fatal(err)
+		return
+	}
+}
+
+func createFile(fileName string) {
+	if _, err := os.Stat("./Files"); os.IsNotExist(err) {
+		createFolder()
+	}
+
+	// check if file exists
+	path := "./Files/" + fileName
+	var _, err = os.Stat(path)
+
+	// create file if not exists
+	if os.IsNotExist(err) {
+		var file, err = os.Create(path)
+		if isError(err) {
+			return
+		}
+		defer file.Close()
+	}
+
+	fmt.Println("File Created Successfully", path)
+}
+
+func writeFile(fileName string, data []byte) {
+	path := "./files/" + fileName
+	// Open file using READ & WRITE permission.
+	var file, err = os.OpenFile(path, os.O_RDWR, 0644)
+	if isError(err) {
+		return
+	}
+	defer file.Close()
+
+	// Write some text line-by-line to file.
+	_, err = file.WriteString(string(data))
+	if isError(err) {
+		return
+	}
+
+	// Save file changes.
+	err = file.Sync()
+	if isError(err) {
+		return
+	}
+
+	fmt.Println("File Updated Successfully.")
+}
+
+func readFile(fileName string) map[string][]string {
+	path := "./files/" + fileName
+	data, err := ioutil.ReadFile(path)
+	if isError(err) {
+		return nil
+	}
+	// nodeIdData = data
+	var nodeIdData map[string][]string
+	err = json.Unmarshal(data, &nodeIdData)
+	if err != nil {
+		log.Println(err)
+	}
+	return nodeIdData
+}
+
+func isError(err error) bool {
+	if err != nil {
+		fmt.Println(err.Error())
+	}
+
+	return (err != nil)
+}
+
+func getExistingNodeID(i int, nodeIdData map[string][]string, inputFile bool) string {
+	var id string
+	if inputFile {
+		fmt.Println("start")
+		data, ok := nodeIdData["id"]
+		if ok {
+			if i >= len(data) {
+				id = randomserialNumber()
+			} else {
+				id = data[i]
+			}
+		}
+		fmt.Println("stop", id)
+	} else {
+		id = randomserialNumber()
+	}
+
+	return id
 }

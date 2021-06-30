@@ -41,10 +41,19 @@ func main() {
 	concurrency := flag.Int("concurrency", 1, "Number of concurrent requests to run")
 	status := flag.String("status", "", "give status type: success or failure")
 	large := flag.Bool("useLarge", false, "use larger json file: true or false, does not work if status is set")
+	output := flag.String("o", "", "output file name eg: fileName.json")
+	input := flag.String("i", "", "input file name eg: fileName.json")
 
 	maxGoroutines := concurrency
 
 	flag.Parse()
+	if *input != "" || *output != "" {
+		if *input == *output {
+			err = true
+			color.Error.Println("both fileName can not be same")
+		}
+	}
+
 	if *numberOfElements <= 0 {
 		err = true
 		color.Error.Println("Please enter valid number")
@@ -77,8 +86,15 @@ func main() {
 		color.Error.Println("status and useLarge both cannot be blank and false at the same time")
 	}
 
+	// if *input != "" {
+	// 	err = true
+	// 	var fileName = *input + ".json"
+	// 	if _, err := os.Stat("./Files/" + fileName); os.IsNotExist(err) {
+	// 		color.Error.Println(err)
+	// 	}
+	// }
 	if !err {
-		makeRequest(*numberOfElements, *url, *apiToken, *dataType, *status, *large, *maxGoroutines)
+		makeRequest(*numberOfElements, *url, *apiToken, *dataType, *status, *large, *maxGoroutines, *input, *output)
 	}
 
 }
