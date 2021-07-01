@@ -151,15 +151,9 @@ func makeRequest(numberOfElements int, endpoint string, apiToken string, dataTyp
 	var nodeData = make([]node, numberOfElements)
 	var complianceData = make([]comp, numberOfElements)
 	var arrOfNodeOrCompliance []string
-	var inputFile bool
 	var nodeIDdata map[string][]string
-	if output != "" {
-		inputFile = false
-	}
 	if input != "" {
-		inputFile = true
-		fileNamedata := input + ".json"
-		nodeIDdata = readFile(fileNamedata)
+		nodeIDdata = readFile(input)
 	}
 	if dataType == "node" {
 		for i := 0; i < numberOfElements; i++ {
@@ -167,7 +161,7 @@ func makeRequest(numberOfElements int, endpoint string, apiToken string, dataTyp
 				"02:" + String(2) + ":" + String(2) + ":" + String(2) + ":" + String(2) + ":" + String(2),
 				randomserialNumber(),
 				pickStatus(),
-				getExistingNodeID(i, nodeIDdata, inputFile),
+				getExistingNodeID(i, nodeIDdata, input),
 				String(10),
 				"ip-" + generateIpAddress(),
 				generateIpAddress(),
@@ -211,7 +205,7 @@ func makeRequest(numberOfElements int, endpoint string, apiToken string, dataTyp
 				currentTimestamp(),
 				"DevSec " + String(3) + " " + String(5),
 				"chef-test-violet-waxwing-yellow-" + String(6),
-				getExistingNodeID(i, nodeIDdata, inputFile),
+				getExistingNodeID(i, nodeIDdata, input),
 				"debian",
 				"8." + fmt.Sprintf("%d", randInt(10, 21)),
 				"apache-01",
@@ -257,7 +251,6 @@ func makeRequest(numberOfElements int, endpoint string, apiToken string, dataTyp
 	}
 
 	if output != "" {
-		fileNamedata := output + ".json"
 		var jsonArr map[string]interface{}
 		err := json.Unmarshal([]byte("{}"), &jsonArr)
 		if err != nil {
@@ -266,10 +259,10 @@ func makeRequest(numberOfElements int, endpoint string, apiToken string, dataTyp
 		}
 		jsonArr["id"] = arrOfNodeOrCompliance
 		jsondata, _ := json.Marshal(jsonArr)
-		if _, err := os.Stat("./Files/" + fileNamedata); os.IsNotExist(err) {
-			createFile(fileNamedata)
+		if _, err := os.Stat(output); os.IsNotExist(err) {
+			createFile(output)
 		}
-		writeFile(fileNamedata, jsondata)
+		writeFile(output, jsondata)
 	}
 }
 
@@ -397,22 +390,21 @@ func IsAcceptedStatusCode(statusCode int32, acceptedCodes []int32) bool {
 	return false
 }
 
-func createFolder() {
-	//Create a folder/directory at a full qualified path
-	err := os.Mkdir("./Files", 0755)
-	if err != nil {
-		log.Fatal(err)
-		return
-	}
-}
+// func createFolder(path string) {
+// 	//Create a folder/directory at a full qualified path
+// 	err := os.Mkdir(path, 0755)
+// 	if err != nil {
+// 		log.Fatal(err)
+// 		return
+// 	}
+// }
 
-func createFile(fileName string) {
-	if _, err := os.Stat("./Files"); os.IsNotExist(err) {
-		createFolder()
-	}
+func createFile(path string) {
+	// if _, err := os.Stat(path); os.IsNotExist(err) {
+	// 	createFolder(path)
+	// }
 
 	// check if file exists
-	path := "./Files/" + fileName
 	var _, err = os.Stat(path)
 
 	// create file if not exists
@@ -427,8 +419,7 @@ func createFile(fileName string) {
 	fmt.Println("File Created Successfully", path)
 }
 
-func writeFile(fileName string, data []byte) {
-	path := "./files/" + fileName
+func writeFile(path string, data []byte) {
 	// Open file using READ & WRITE permission.
 	var file, err = os.OpenFile(path, os.O_RDWR, 0644)
 	if isError(err) {
@@ -451,8 +442,7 @@ func writeFile(fileName string, data []byte) {
 	fmt.Println("File Updated Successfully.")
 }
 
-func readFile(fileName string) map[string][]string {
-	path := "./files/" + fileName
+func readFile(path string) map[string][]string {
 	data, err := ioutil.ReadFile(path)
 	if isError(err) {
 		return nil
@@ -474,9 +464,9 @@ func isError(err error) bool {
 	return (err != nil)
 }
 
-func getExistingNodeID(i int, nodeIdData map[string][]string, inputFile bool) string {
+func getExistingNodeID(i int, nodeIdData map[string][]string, input string) string {
 	var id string
-	if inputFile {
+	if input != "" {
 		data, ok := nodeIdData["id"]
 		if ok {
 			if i >= len(data) {
@@ -488,6 +478,5 @@ func getExistingNodeID(i int, nodeIdData map[string][]string, inputFile bool) st
 	} else {
 		id = randomserialNumber()
 	}
-
 	return id
 }
