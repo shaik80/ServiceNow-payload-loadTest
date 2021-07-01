@@ -5,6 +5,7 @@
 package main
 
 import (
+	"errors"
 	"flag"
 
 	"gopkg.in/gookit/color.v1"
@@ -33,7 +34,7 @@ var complianceFile = map[string]string{
 
 func main() {
 
-	err := false
+	var err error
 	numberOfElements := flag.Int("numberOfElement", 1, "number of elements")
 	url := flag.String("url", "", "automate url")
 	apiToken := flag.String("token", "", "automate token")
@@ -49,30 +50,24 @@ func main() {
 	flag.Parse()
 	if *input != "" || *output != "" {
 		if *input == *output {
-			err = true
-			color.Error.Println("both fileName can not be same")
+			err = errors.New("both fileName can not be same")
 		}
 	}
 
 	if *numberOfElements <= 0 {
-		err = true
-		color.Error.Println("Please enter valid number")
+		err = errors.New("Please enter valid number")
 	}
 	if *url == "" {
-		err = true
-		color.Error.Println("url should not be empty")
+		err = errors.New("url should not be empty")
 	}
 	if *apiToken == "" {
-		err = true
-		color.Error.Println("token should not be empty")
+		err = errors.New("token should not be empty")
 	}
 	if *dataType != "node" && *dataType != "compliance" {
-		err = true
-		color.Error.Println("data should be either node or compliance")
+		err = errors.New("data should be either node or compliance")
 	}
 	if *status != "success" && *status != "failure" && *status != "" {
-		err = true
-		color.Error.Println("data should be either node or compliance or blank")
+		err = errors.New("data should be either node or compliance or blank")
 	}
 
 	if *status == "success" || *status == "failure" {
@@ -82,8 +77,7 @@ func main() {
 	}
 
 	if *status != "success" && *status != "failure" && !*large {
-		err = true
-		color.Error.Println("status and useLarge both cannot be blank and false at the same time")
+		err = errors.New("status and useLarge both cannot be blank and false at the same time")
 	}
 
 	// if *input != "" {
@@ -93,8 +87,11 @@ func main() {
 	// 		color.Error.Println(err)
 	// 	}
 	// }
-	if !err {
-		makeRequest(*numberOfElements, *url, *apiToken, *dataType, *status, *large, *maxGoroutines, *input, *output)
+	if err != nil {
+		color.Error.Println(err)
+		return
 	}
+
+	makeRequest(*numberOfElements, *url, *apiToken, *dataType, *status, *large, *maxGoroutines, *input, *output)
 
 }

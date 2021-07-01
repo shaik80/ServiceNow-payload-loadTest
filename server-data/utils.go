@@ -477,7 +477,6 @@ func isError(err error) bool {
 func getExistingNodeID(i int, nodeIdData map[string][]string, inputFile bool) string {
 	var id string
 	if inputFile {
-		fmt.Println("start")
 		data, ok := nodeIdData["id"]
 		if ok {
 			if i >= len(data) {
@@ -486,7 +485,6 @@ func getExistingNodeID(i int, nodeIdData map[string][]string, inputFile bool) st
 				id = data[i]
 			}
 		}
-		fmt.Println("stop", id)
 	} else {
 		id = randomserialNumber()
 	}
