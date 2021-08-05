@@ -12,6 +12,7 @@ import (
 	"math/rand"
 	"net/http"
 	"os"
+	"strings"
 	"text/template"
 	"time"
 
@@ -166,8 +167,8 @@ func makeRequest(numberOfElements int, endpoint string, apiToken string, dataTyp
 				"ip-" + generateIpAddress(),
 				generateIpAddress(),
 				"testhost" + String(8),
-				currentTimestamp(),
-				currentTimestamp(),
+				"currentTimestamp",
+				"currentTimestamp",
 				"nginx::default" + String(3),
 				"tomcat::default" + String(3),
 				"yum::default" + String(3),
@@ -202,7 +203,7 @@ func makeRequest(numberOfElements int, endpoint string, apiToken string, dataTyp
 			complianceData[i] = comp{
 				"2.1." + fmt.Sprintf("%d", randInt(0, 11)),
 				String(5),
-				currentTimestamp(),
+				"currentTimestamp",
 				"DevSec " + String(3) + " " + String(5),
 				"chef-test-violet-waxwing-yellow-" + String(6),
 				getExistingNodeID(i, nodeIDdata, input),
@@ -304,7 +305,9 @@ func processTemplateAndSend(guard chan struct{}, r interface{}, doneChannel chan
 	if err != nil {
 		log.Println("executing template:", err)
 	}
-	err = sendNotification(tpl.String(), endpoint, apiToken)
+	templateStr := tpl.String()
+	templateStr = strings.ReplaceAll(templateStr, "currentTimestamp", currentTimestamp())
+	err = sendNotification(templateStr, endpoint, apiToken)
 	if err != nil {
 		fmt.Println("Error", err)
 	}
